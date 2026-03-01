@@ -9,6 +9,7 @@ JOB_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/palmaII-skylake-compact.sh
 DEPENDS	
 0	assets	tasks/build/containers/gcc	WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh
+---
 JOB	1
 STAGE	0
 JOB_NAME	run_tasks

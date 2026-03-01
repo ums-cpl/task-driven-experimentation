@@ -10,6 +10,7 @@ WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/build/containers/plot
 1	assets	tasks/build/containers/gcc
+---
 JOB	1
 STAGE	1
 JOB_NAME	run_tasks
@@ -18,6 +19,7 @@ DEPENDS	0
 0	assets	tasks/build/data
 1	assets	tasks/build/optimized
 2	assets	tasks/build/baseline
+---
 JOB	2
 STAGE	2
 JOB_NAME	run_tasks
@@ -25,6 +27,7 @@ WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	1
 0	assets	tasks/experiment/MatMul/IS1/data
 1	assets	tasks/experiment/MatMul/IS2/data
+---
 JOB	3
 STAGE	3
 JOB_NAME	run_tasks
@@ -70,6 +73,7 @@ DEPENDS	2
 37	assets-run-10	tasks/experiment/MatMul/IS1/baseline
 38	assets-run-10	tasks/experiment/MatMul/IS2/optimized
 39	assets-run-10	tasks/experiment/MatMul/IS2/baseline
+---
 JOB	4
 STAGE	4
 JOB_NAME	run_tasks

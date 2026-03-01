@@ -154,7 +154,7 @@ The script parses the manifest, filters to JOB blocks where `STAGE` matches `$3`
 
 where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based task index within that job.
 
-**Manifest format:** Header: `SKIP_VERIFY_DEF` (true/false), then `---`. Then JOB blocks ordered by stage. Each block:
+**Manifest format:** Header: `SKIP_VERIFY_DEF` (true/false), then `---`. Then JOB blocks ordered by stage, separated by `---`. Each block:
 
 - `JOB\t<id>` — unique job id
 - `STAGE\t<N>` — stage number

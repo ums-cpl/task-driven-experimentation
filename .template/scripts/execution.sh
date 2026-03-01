@@ -340,8 +340,10 @@ create_manifest() {
   print_manifest_content() {
     echo "SKIP_VERIFY_DEF=$SKIP_VERIFY_DEF"
     echo "---"
-    local key task_dir run_name overrides dep_list prev_stage i
+    local key task_dir run_name overrides dep_list prev_stage i block_started=false
     for key in "${emitted_keys[@]}"; do
+      [[ "$block_started" == true ]] && echo "---"
+      block_started=true
       stage="${key%%	*}"
       jname="${key#*	}"
       jname="${jname%%	*}"

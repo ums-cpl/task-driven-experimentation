@@ -22,6 +22,7 @@ wm_parse_manifest_for_stage() {
       [[ "$line" == "---" ]] && in_header=false
       continue
     fi
+    [[ "$line" == "---" ]] && continue
     if [[ "$line" == JOB* ]]; then
       current_job=$(echo "$line" | cut -f2)
       current_stage=""
