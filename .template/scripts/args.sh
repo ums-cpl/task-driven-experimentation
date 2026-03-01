@@ -10,9 +10,9 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
   - Parent directory: recursively finds all descendant dirs with run.sh
   - Wildcard: expands to matching dirs (e.g. tasks/.../*). Use !(pattern) to exclude (e.g. tasks/.../*/!(data))
 
-  Optional suffix :RUN_SPEC sets run(s). Examples: :local, :run:1:10, :run* (clean only, wildcard).
-  Without suffix: uses task's RUN_SPEC (default "assets") for execute; cleans all runs with --clean.
-  Quote the task spec if RUN_SPEC contains * or ? (e.g. "tasks/task1:run*").
+  Optional suffix :RUN_SPECS sets run(s). Examples: :local, :run-{1:10}, :run* (clean only, wildcard).
+  Without suffix: default RUN_SPECS "assets" for execute; cleans all runs with --clean.
+  Quote the task spec if RUN_SPECS contains * or ? (e.g. "tasks/task1:run*").
 
 Options:
   --dry-run              Create manifest without running (no workload manager invoke)
@@ -30,7 +30,7 @@ EOF
 # Parse TASK arg into task_path and run_spec. Split on first ':'.
 # Used for both CLI TASK specs and DEPENDENCIES in run_deps.sh.
 # Examples: "tasks/build/data:gcc" -> path="tasks/build/data", run_spec="gcc";
-#           "tasks/build/data:run:1:10" -> path="tasks/build/data", run_spec="run:1:10" (range).
+#           "tasks/build/data:run-{1:10}" -> path="tasks/build/data", run_spec="run-{1:10}" (range).
 # Edge cases: Windows paths like C:\path break (first colon separates drive). Assumes Unix-style paths.
 # Bare ":local" (no path) is invalid. Double colon "path::run" yields run_spec=":run" (literal).
 parse_task_spec() {

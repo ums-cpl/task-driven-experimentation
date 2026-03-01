@@ -20,7 +20,7 @@ Used to run tasks.
 - A parent directory (recursively finds all descendant dirs with `run.sh`)
 - A wildcard (e.g. `tasks/.../*`; use `"!(pattern)"` to exclude)
 
-Optional suffix `:RUN_SPEC` overrides the task's `RUN_SPEC` (set in `task_meta.sh`). Examples: `:local`, `:run:1:10`, `:run*` (clean only, wildcard). Without suffix: uses the task's `RUN_SPEC`; cleans all runs with `--clean`.
+Optional suffix `:RUN_SPECS` overrides the task's `RUN_SPECS` (set in `task_meta.sh`). Examples: `:local`, `:run-{1:10}`, `:run*` (clean only, wildcard). Without suffix: uses the task's `RUN_SPECS`; cleans all runs with `--clean`. RUN_SPECS uses the same format for execute, clean, and dependency specs: comma-separated list of RUN_SPEC items; each RUN_SPEC is a literal with optional `{a,b,c}` (list) and `{start:end}` (range) patterns; multiple patterns expand to cartesian product (last varies fastest). Wildcards `*` and `?` outside `{...}` are supported for clean and dependency specs.
 
 **Options:**
 
@@ -40,7 +40,7 @@ Optional suffix `:RUN_SPEC` overrides the task's `RUN_SPEC` (set in `task_meta.s
 ```bash
 ./run_tasks.sh tasks/build
 ./run_tasks.sh --dry-run tasks/experiment/MatMul
-./run_tasks.sh tasks/experiment/MatMul/IS1/baseline:run:1:5
+./run_tasks.sh tasks/experiment/MatMul/IS1/baseline:run-{1:5}
 ./run_tasks.sh WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh tasks/experiment
 ./run_tasks.sh --clean tasks/experiment:run1
 ```
@@ -84,12 +84,12 @@ A **task** is a static definition of work. A **task run** is a concrete executio
 | `CONTAINER`        | Container image (`.sif`) to use for task runs                                                     |
 | `CONTAINER_DEF`    | Definition file (`.def`) to validate the container against                                        |
 | `CONTAINER_GPU`    | Set to `ON` if the container uses a GPU                                                           |
-| `RUN_SPEC`         | Default task runs to execute (e.g. `assets`, `run:1:10`)                                          |
+| `RUN_SPECS`        | Default task runs to execute (e.g. `assets`, `run-{1:10}`). Comma-separated list of RUN_SPECs; each may use `{a,b,c}` and `{start:end}`. |
 | `WORKLOAD_MANAGER` | Workload manager script to use for this task (default: `workload_managers/direct.sh`)             |
 | `JOB_NAME`         | Job name for the workload manager, e.g. SLURM job name (default: `run_tasks`)                     |
 | `TASK_DISABLED`    | Set to `true` (or `1`, `yes`) to disable the task; skipped unless `--run-disabled` is used        |
 
-**Priority** (same for all writable variables, highest to lowest): CLI override where applicable (e.g. `:RUN_SPEC` suffix) > `KEY=VALUE` env override on the command line > value from `task_meta.sh` chain (root-to-leaf) > built-in default.
+**Priority** (same for all writable variables, highest to lowest): CLI override where applicable (e.g. `:RUN_SPECS` suffix) > `KEY=VALUE` env override on the command line > value from `task_meta.sh` chain (root-to-leaf) > built-in default.
 
 
 ### Task Run: `run_env.sh`, `run_deps.sh`, `run.sh`
@@ -105,11 +105,11 @@ A **task** is a static definition of work. A **task run** is a concrete executio
 | `$RUN_ID`            | Identifier of the current task run         |
 
 
-**`run_deps.sh`** -- Hierarchical (sourced root-to-leaf). Defines dependencies by writing `DEPENDENCIES` (array of dependency specs). Has the same data and variables available as `run_env.sh`. Each entry is a task path with an optional `:RUN_SPEC` suffix:
+**`run_deps.sh`** -- Hierarchical (sourced root-to-leaf). Defines dependencies by writing `DEPENDENCIES` (array of dependency specs). Has the same data and variables available as `run_env.sh`. Each entry is a task path with an optional `:RUN_SPECS` suffix (same format as RUN_SPECS: comma-separated RUN_SPECs, `{a,b,c}` and `{start:end}` patterns, wildcards `*`/`?` outside braces):
 
 - `tasks/task1` -- depends on all runs of task1: every run must have `.run_success`, and at least one run must exist
 - `tasks/task1:local` -- depends on the `local` run of task1
-- `tasks/task1:run:1:10` -- depends on runs `run1` through `run10` of task1
+- `tasks/task1:run-{1:10}` -- depends on runs `run-1` through `run-10` of task1
 - `"tasks/task1:run*"` -- depends on all runs matching `run*` (quote to prevent shell glob expansion)
 
 A dependency is resolved if it is in the current invocation or already has a `.run_success` file on disk. If neither holds, the runner fails with an error listing the unresolved dependencies. Between stages, the runner verifies that all dependency runs have `.run_success` files before proceeding.

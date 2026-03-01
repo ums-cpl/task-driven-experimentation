@@ -58,7 +58,7 @@ validate_dependency() {
     fi
     _dep_checks["$occ_key"]+="ALL	$dep_task_dir"$'\n'
 
-  elif [[ "$dep_run_spec" == *"*"* || "$dep_run_spec" == *"?"* ]]; then
+  elif _has_wildcard_outside_braces "$dep_run_spec"; then
     local -a matched_runs=()
     expand_run_spec_for_clean "$dep_task_dir" "$dep_run_spec" matched_runs
     declare -A _matched_set=()

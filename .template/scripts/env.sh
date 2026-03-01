@@ -65,7 +65,7 @@ build_source_cmds_with_overrides() {
 }
 
 # Source the task_meta.sh chain in a subshell with framework vars and echo the
-# requested variable. Used to resolve RUN_SPEC, CONTAINER, CONTAINER_DEF per task.
+# requested variable. Used to resolve RUN_SPECS, CONTAINER, CONTAINER_DEF per task.
 resolve_task_var() {
   local task_dir="$1"
   local var_name="$2"

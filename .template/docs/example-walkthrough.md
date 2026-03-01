@@ -76,7 +76,7 @@ The example uses two container definitions: one for compilation and one for plot
 
 Container build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) run `apptainer build` and need no `task_meta.sh`. Compilation tasks (`tasks/build/data/`, `tasks/build/baseline/`, `tasks/build/optimized/`) each compile a different asset source file. Each compilation task sets `CONTAINER` and `CONTAINER_DEF` in its own `task_meta.sh` and declares a dependency on the container build task via `run_deps.sh`.
 
-Build tasks use `RUN_SPEC=$BUILD_FOLDER`, which gives them a single named run folder. The `BUILD_FOLDER` variable enables running tasks independently on multiple devices. You can override it via `run_tasks.sh` KEY=VALUE pairs (e.g. `BUILD_FOLDER=gpu2080`). This creates separate run folders per device (e.g. `gpu2080/`, `gpu4090/`) so results stay isolated. Overrides are positional: each `KEY=VALUE` applies to all following task specs. The plot task aggregates across all `*-run*` folders, so plots can include all devices.
+Build tasks use `RUN_SPECS=$BUILD_FOLDER`, which gives them a single named run folder. The `BUILD_FOLDER` variable enables running tasks independently on multiple devices. You can override it via `run_tasks.sh` KEY=VALUE pairs (e.g. `BUILD_FOLDER=gpu2080`). This creates separate run folders per device (e.g. `gpu2080/`, `gpu4090/`) so results stay isolated. Overrides are positional: each `KEY=VALUE` applies to all following task specs. The plot task aggregates across all `*-run*` folders, so plots can include all devices.
 
 ### Debug build (DISABLED)
 
@@ -88,9 +88,9 @@ The `tasks/build/debug/` task compiles the baseline matmul binary with debug sym
 
 ### Experiment Tasks (`tasks/experiment/`)
 
-The experiment tasks form a three-level hierarchy: routine, input size, and variant. Each level contributes configuration: the root `tasks/experiment/task_meta.sh` sets `RUN_SPEC` for repeated runs; the routine level (`MatMul/task_meta.sh`) sets a routine identifier used in paths; the input-size level (`IS1/`, `IS2/`) sets input parameters; and the variant level (`baseline/`, `optimized/`) sets competitor name and container.
+The experiment tasks form a three-level hierarchy: routine, input size, and variant. Each level contributes configuration: the root `tasks/experiment/task_meta.sh` sets `RUN_SPECS` for repeated runs; the routine level (`MatMul/task_meta.sh`) sets a routine identifier used in paths; the input-size level (`IS1/`, `IS2/`) sets input parameters; and the variant level (`baseline/`, `optimized/`) sets competitor name and container.
 
-Data generation tasks (`*/data/`) live within input-size groups. They override `RUN_SPEC` to a single run, since data only needs to be generated once. They depend on the container and the compiled data binary.
+Data generation tasks (`*/data/`) live within input-size groups. They override `RUN_SPECS` to a single run, since data only needs to be generated once. They depend on the container and the compiled data binary.
 
 ### Experiment Variant Tasks
 
@@ -112,13 +112,13 @@ The file `tasks/experiment/MatMul/run_env.sh` defines helper functions `create_d
 
 `run_deps.sh` files are hierarchical: they are sourced root-to-leaf and append to `DEPENDENCIES` via `+=`. Build tasks depend on their container build. Data tasks depend on the container and the compiled data binary. Experiment tasks depend on the container, the compiled variant binary, and the generated data for their input size. The plot task depends on the plot container and all experiment runs, using the glob-style spec `:*-run*` to match any run of any device. Dependency paths use variables (`$COMPETITOR`, `$ROUTINE`, `$INPUT_SIZE`, `$BUILD_FOLDER`) so they stay generic across the hierarchy.
 
-## RUN_SPEC Patterns
+## RUN_SPECS patterns
 
-Build tasks use `$BUILD_FOLDER` for a single run, so the folder is named after the `BUILD_FOLDER` variable. Experiment tasks default to `$BUILD_FOLDER-run:1:10`, giving ten repeated runs with the `$BUILD_FOLDER` prefix keeping each device's runs independent. Data tasks override this to `$BUILD_FOLDER` for a single run per device. The plot task uses `assets` -- a fixed name for a single combined run that can include all devices.
+RUN_SPECS uses the same format for execute, clean, and dependency specs: a comma-separated list of RUN_SPEC items. Each RUN_SPEC is a literal with optional expansion patterns: `{a,b,c}` (list) and `{start:end}` (integer range); multiple patterns expand to the cartesian product (last pattern varies fastest). Wildcards `*` and `?` outside `{...}` are supported for clean and dependency specs. Build tasks use `$BUILD_FOLDER` for a single run. Experiment tasks default to `$BUILD_FOLDER-run-{1:10}`, giving ten repeated runs with the `$BUILD_FOLDER` prefix keeping each device's runs independent. Data tasks override this to `$BUILD_FOLDER` for a single run per device. The plot task uses `assets` -- a fixed name for a single combined run that can include all devices.
 
 ## Running the Example
 
-Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPEC` patterns in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `--workload-manager=workload_managers/palmaII-skylake.sh`. To remove task output, use `--clean`.
+Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPECS` in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `--workload-manager=workload_managers/palmaII-skylake.sh`. To remove task output, use `--clean`.
 
 **Step-by-step:**
 
@@ -130,7 +130,7 @@ Run the workflow in order: build, create data, run experiments, then plot. Becau
 ./run_tasks.sh tasks/experiment/*/*/data
 
 # 3. Run all experiment tasks (except data generation) 10 times
-./run_tasks.sh "tasks/experiment/*/*/!(data):run:1:10"
+./run_tasks.sh "tasks/experiment/*/*/!(data):run-{1:10}"
 
 # 4. Generate plots from experiment results
 ./run_tasks.sh tasks/plot/

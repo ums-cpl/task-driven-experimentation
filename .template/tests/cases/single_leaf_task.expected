@@ -1,4 +1,4 @@
-# Single leaf task: resolution and default RUN_SPEC
+# Single leaf task: resolution and default RUN_SPECS
 tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false

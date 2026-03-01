@@ -181,7 +181,7 @@ build_task_run_pairs() {
           runs=("${sorted[@]}")
         else
           local resolved_run_spec
-          resolved_run_spec=$(resolve_task_var "$task_dir" "RUN_SPEC")
+          resolved_run_spec=$(resolve_task_var "$task_dir" "RUN_SPECS")
           if [[ -z "$resolved_run_spec" ]]; then
             resolved_run_spec="assets"
           fi
@@ -203,10 +203,10 @@ build_task_run_pairs() {
     done < <(resolve_arg "$task_path" "$REPOSITORY_ROOT")
 
     # Emit pairs for this spec in run-first, task-second order
-    # Only add RUN_SPEC to overrides when explicitly from CLI: user-used suffix (spec_idx < ORIGINAL_TASK_SPEC_COUNT). Do not add for specs added by --include-deps or when RUN_SPEC comes from task_meta/default.
+    # Only add RUN_SPECS to overrides when explicitly from CLI: user-used suffix (spec_idx < ORIGINAL_TASK_SPEC_COUNT). Do not add for specs added by --include-deps or when RUN_SPECS comes from task_meta/default.
     local effective_ov_tsv="$override_tsv"
     if [[ -n "$run_spec" ]] && [[ "$spec_idx" -lt "${ORIGINAL_TASK_SPEC_COUNT:-0}" ]]; then
-      effective_ov_tsv="${effective_ov_tsv:+${effective_ov_tsv}$'\t'}RUN_SPEC=$run_spec"
+      effective_ov_tsv="${effective_ov_tsv:+${effective_ov_tsv}$'\t'}RUN_SPECS=$run_spec"
     fi
     local max_runs=0
     local t

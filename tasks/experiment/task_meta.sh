@@ -1,1 +1,1 @@
-export RUN_SPEC=$BUILD_FOLDER-run:1:10
+export RUN_SPECS="${BUILD_FOLDER}-run-{1:10}"

@@ -1,5 +1,5 @@
-# CLI :RUN_SPEC suffix wins over RUN_SPEC=other env override
-RUN_SPEC=other --include-deps tasks/experiment/MatMul/IS1/baseline:run1
+# CLI :RUN_SPECS suffix wins over RUN_SPECS=other env override
+RUN_SPECS=other --include-deps tasks/experiment/MatMul/IS1/baseline:run1
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---
@@ -27,4 +27,4 @@ STAGE	3
 JOB_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	2
-0	run1	tasks/experiment/MatMul/IS1/baseline	RUN_SPEC=run1
+0	run1	tasks/experiment/MatMul/IS1/baseline	RUN_SPECS=run1
