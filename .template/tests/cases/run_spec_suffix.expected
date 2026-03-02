@@ -1,5 +1,5 @@
 # path:run_spec suffix; multi-stage experiment deps
---include-deps tasks/experiment/MatMul/IS1/baseline:assets-run1
+--dry-run --include-deps tasks/experiment/MatMul/IS1/baseline:assets-run1
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

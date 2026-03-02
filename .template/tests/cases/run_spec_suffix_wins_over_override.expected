@@ -1,5 +1,5 @@
 # CLI :RUN_SPECS suffix wins over RUN_SPECS=other env override
-RUN_SPECS=other --include-deps tasks/experiment/MatMul/IS1/baseline:run1
+--dry-run RUN_SPECS=other --include-deps tasks/experiment/MatMul/IS1/baseline:run1
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

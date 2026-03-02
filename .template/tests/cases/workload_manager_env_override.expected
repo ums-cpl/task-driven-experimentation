@@ -1,5 +1,5 @@
 # WORKLOAD_MANAGER env override appears in JOB block
-WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/build/containers/gcc
+--dry-run WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

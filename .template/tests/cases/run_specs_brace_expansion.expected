@@ -1,5 +1,5 @@
 # RUN_SPECS brace expansion: {a,b}-{1:2} -> cartesian product a-1, a-2, b-1, b-2
-tasks/build/containers/gcc:{a,b}-{1:2}
+--dry-run tasks/build/containers/gcc:{a,b}-{1:2}
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

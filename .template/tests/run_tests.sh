@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run manifest tests: for each case file, run_tasks.sh --dry-run <args> and diff stdout to expected manifest.
+# Run tests: for each case file, run_tasks.sh <args> and diff stdout/stderr to expected output.
+# Full invocation args are on the first line of each .expected file (e.g. --dry-run tasks/... for manifest tests).
 # Usage: run_tests.sh [TEST ...]
 #   No args: run all case files under .template/tests/cases/ recursively.
 #   TEST: path relative to cwd (or absolute) — a case file, a directory (all case files under it), or a wildcard.
@@ -84,7 +85,7 @@ run_one_case() {
   rm -f "$stripped_file"
   actual_file="${TMPDIR:-/tmp}/run_tests_actual_$$"
   if [[ $expect_fail -eq 0 ]]; then
-    if ! ( set -- $args_line; "$REPOSITORY_ROOT/run_tasks.sh" --dry-run "$@" ) > "$actual_file" 2>/dev/null; then
+    if ! ( set -- $args_line; "$REPOSITORY_ROOT/run_tasks.sh" "$@" ) > "$actual_file" 2>/dev/null; then
       rm -f "$expected_file" "$actual_file"
       echo -e "${RED}FAIL${RESET} $case_file (run_tasks.sh failed)"
       return 1
@@ -97,7 +98,7 @@ run_one_case() {
       return 1
     fi
   else
-    if ( set -- $args_line; "$REPOSITORY_ROOT/run_tasks.sh" --dry-run "$@" ) >/dev/null 2> "$actual_file"; then
+    if ( set -- $args_line; "$REPOSITORY_ROOT/run_tasks.sh" "$@" ) >/dev/null 2> "$actual_file"; then
       rm -f "$expected_file" "$actual_file"
       echo -e "${RED}FAIL${RESET} $case_file (run_tasks.sh succeeded but failure was expected)"
       return 1

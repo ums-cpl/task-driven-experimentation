@@ -1,5 +1,5 @@
 # Same task, two different override contexts resulting in different runs → one stage
-BUILD_FOLDER=cpu tasks/build/containers/gcc BUILD_FOLDER=gpu tasks/build/containers/gcc
+--dry-run BUILD_FOLDER=cpu tasks/build/containers/gcc BUILD_FOLDER=gpu tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

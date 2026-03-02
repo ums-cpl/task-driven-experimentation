@@ -1,5 +1,5 @@
 # Same-stage tasks with different WMs get separate JOB blocks
-WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/build/containers/plot
+--dry-run WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/build/containers/plot
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

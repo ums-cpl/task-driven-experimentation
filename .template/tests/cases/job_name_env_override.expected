@@ -1,5 +1,5 @@
 # JOB_NAME env override appears in JOB block and on task line
-JOB_NAME=test tasks/build/containers/gcc
+--dry-run JOB_NAME=test tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

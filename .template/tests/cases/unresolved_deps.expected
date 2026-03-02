@@ -1,5 +1,5 @@
 # Expect error when task has dependencies not in invocation and not satisfied on disk
-tasks/experiment/MatMul/IS1/baseline
+--dry-run tasks/experiment/MatMul/IS1/baseline
 EXPECT_FAILURE:
 Error: The following dependencies are neither in the current invocation nor satisfied on disk:
   - tasks/build/baseline:assets

@@ -1,5 +1,5 @@
 # KEY=VALUE env overrides appear in manifest (per-task, on task line)
-FOO=bar tasks/build/containers/gcc
+--dry-run FOO=bar tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

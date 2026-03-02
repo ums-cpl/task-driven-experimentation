@@ -1,5 +1,5 @@
 # No tasks passed: run all tasks under tasks/
-
+--dry-run
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

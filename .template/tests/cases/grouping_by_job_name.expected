@@ -1,5 +1,5 @@
 # Same-stage tasks with different JOB_NAMEs get separate JOB blocks
-JOB_NAME=a tasks/build/containers/gcc JOB_NAME=b tasks/build/containers/plot
+--dry-run JOB_NAME=a tasks/build/containers/gcc JOB_NAME=b tasks/build/containers/plot
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

@@ -1,5 +1,5 @@
 # --include-deps: missing deps added and staged
---include-deps tasks/build/data
+--dry-run --include-deps tasks/build/data
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

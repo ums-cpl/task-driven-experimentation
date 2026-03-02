@@ -165,7 +165,7 @@ where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based task index wit
 
 ## Test runner
 
-The test runner in `.template/tests/` checks that `run_tasks.sh --dry-run` produces the expected manifest for given task specs. Run it from the repository root.
+The test runner in `.template/tests/` runs `run_tasks.sh` with arguments taken from each case file and diffs stdout/stderr to the expected output. Run it from the repository root.
 
 **Usage:**
 
@@ -181,4 +181,4 @@ The test runner in `.template/tests/` checks that `run_tasks.sh --dry-run` produ
 
 TEST paths are relative to the current working directory (or absolute). For example, from the repository root you might pass `.template/tests/cases/build.expected` or `.template/tests/cases/`. The runner resolves TESTs to a deduplicated list of case files (`.expected` only), then runs each.
 
-**Case file format:** Case files use the `.expected` suffix (e.g. `build.expected`). Comment lines (starting with `#` after optional leading whitespace) are ignored throughout. After skipping comments: the first line is the invocation args for `run_tasks.sh` (e.g. `tasks/build`), the second must be `EXPECT_SUCCESS:` or `EXPECT_FAILURE:`, and the rest is the expected output. For `EXPECT_SUCCESS:` the expected content is the manifest (same format as `--dry-run` stdout). For `EXPECT_FAILURE:` the run is expected to exit non-zero and the expected content is stderr (optional; if empty, only the non-zero exit is asserted). You can use comments to document the test's purpose, including at the top of the file. On diff failure, the actual output is saved to a file with the same base name and `.actual` suffix (e.g. `build.actual`).
+**Case file format:** Case files use the `.expected` suffix (e.g. `build.expected`). Comment lines (starting with `#` after optional leading whitespace) are ignored throughout. After skipping comments: the first line is the full invocation args for `run_tasks.sh` (e.g. `--dry-run tasks/build` for manifest tests, or other args to test status printing, etc.), the second must be `EXPECT_SUCCESS:` or `EXPECT_FAILURE:`, and the rest is the expected output. For `EXPECT_SUCCESS:` the expected content is stdout (e.g. the manifest when using `--dry-run`). For `EXPECT_FAILURE:` the run is expected to exit non-zero and the expected content is stderr (optional; if empty, only the non-zero exit is asserted). You can use comments to document the test's purpose, including at the top of the file. On diff failure, the actual output is saved to a file with the same base name and `.actual` suffix (e.g. `build.actual`).
