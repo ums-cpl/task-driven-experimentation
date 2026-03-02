@@ -20,6 +20,7 @@ source "$RUN_TASKS_LIB/run_spec.sh"
 source "$RUN_TASKS_LIB/task_resolution.sh"
 source "$RUN_TASKS_LIB/env.sh"
 source "$RUN_TASKS_LIB/stages.sh"
+source "$RUN_TASKS_LIB/status.sh"
 source "$RUN_TASKS_LIB/execution.sh"
 source "$RUN_TASKS_LIB/main.sh"
 

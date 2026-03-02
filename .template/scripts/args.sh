@@ -21,6 +21,8 @@ Options:
   --skip-verify-def      Skip verification that container .sif matches containers/*.def
   --run-disabled         Run tasks even if TASK_DISABLED is set in task_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
+  --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
+  --status-manifest=FILE Show exit states for all task runs listed in FILE (manifest from a prior run)
   -h, --help             Show this help
 
 Environment overrides (KEY=VALUE) are applied after each sourced file (task_meta.sh, run_env.sh, run_deps.sh), pinning overridden values so every subsequent file sees them.
@@ -79,6 +81,14 @@ parse_args() {
         ;;
       --include-deps)
         INCLUDE_DEPS=true
+        shift
+        ;;
+      --status)
+        STATUS_MODE=true
+        shift
+        ;;
+      --status-manifest=*)
+        STATUS_MANIFEST="${1#--status-manifest=}"
         shift
         ;;
       -h|--help)

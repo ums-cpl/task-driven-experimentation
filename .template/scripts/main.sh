@@ -10,6 +10,40 @@ main() {
     exit $?
   fi
 
+  # Status mode: show exit states for task runs (from manifest and/or task specs)
+  if [[ "$STATUS_MODE" == true || -n "$STATUS_MANIFEST" ]]; then
+    RUN_STATUS_ROWS=()
+    declare -A seen_path_run=()
+
+    if [[ -n "$STATUS_MANIFEST" ]]; then
+      [[ ! -f "$STATUS_MANIFEST" ]] && { echo "Error: Manifest not found: $STATUS_MANIFEST" >&2; exit 1; }
+      while IFS=$'\t' read -r job_id idx run path; do
+        [[ -z "$path" ]] && continue
+        seen_path_run["$path	$run"]=1
+        RUN_STATUS_ROWS+=("$job_id/$idx	$run	$path")
+      done < <(awk -F'\t' 'BEGIN{j=""} /^JOB\t/ {j=$2; next} /^[0-9]+\t/ {print j"\t"$0}' "$STATUS_MANIFEST")
+    fi
+
+    if [[ "$STATUS_MODE" == true && ${#TASK_SPECS[@]} -eq 0 ]]; then
+      TASK_SPECS=("tasks")
+      TASK_SPEC_OVERRIDES=("")
+    fi
+    if [[ ${#TASK_SPECS[@]} -gt 0 ]]; then
+      build_task_run_pairs
+      for pair in "${TASK_RUN_PAIRS[@]}"; do
+        task_dir="${pair%%	*}"
+        run_name="${pair#*	}"
+        relative_path="${task_dir#$REPOSITORY_ROOT/}"
+        key="$relative_path	$run_name"
+        [[ -n "${seen_path_run[$key]:-}" ]] && continue
+        RUN_STATUS_ROWS+=("-	$run_name	$relative_path")
+      done
+    fi
+
+    print_task_run_status "${STATUS_MANIFEST:-}"
+    exit 0
+  fi
+
   # When no tasks specified, run all tasks under tasks/
   if [[ ${#TASK_SPECS[@]} -eq 0 ]]; then
     TASK_SPECS=("tasks")

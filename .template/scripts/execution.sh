@@ -394,41 +394,14 @@ create_manifest() {
   manifest_path="$inv_dir/manifest"
   print_manifest_content > "$manifest_path"
 
-  # Script to print exit states from task run folders
-  cat > "$inv_dir/show_exit_states.sh" << 'EXIT_SCRIPT'
+  # Helper to show status for this invocation's manifest (execs run_tasks.sh with --status-manifest)
+  cat > "$inv_dir/status.sh" << 'STATUS_HELPER'
 #!/usr/bin/env bash
 set -euo pipefail
-MANIFEST="$(cd "$(dirname "$0")" && pwd)/manifest"
-[[ ! -f "$MANIFEST" ]] && { echo "Error: manifest not found: $MANIFEST" >&2; exit 1; }
-REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-echo "JOB/IDX  RUN                          PATH                                                              STATUS "
-echo "-------  ---------------------------  ----------------------------------------------------------------  -------"
-prev_job=""
-while IFS=$'\t' read -r job_id idx run path; do
-  [[ -z "$path" ]] && continue
-  if [[ "$job_id" != "$prev_job" ]]; then
-    [[ -n "$prev_job" ]] && echo ""
-    prev_job="$job_id"
-  fi
-  run_folder="$REPO_ROOT/$path/$run"
-  if [[ -f "$run_folder/.run_success" ]] && [[ ! "$MANIFEST" -nt "$run_folder/.run_success" ]]; then
-    status=$'\033[32mSUCCESS\033[0m'
-  elif [[ -f "$run_folder/.run_failed" ]] && [[ ! "$MANIFEST" -nt "$run_folder/.run_failed" ]]; then
-    status=$'\033[31mFAILED\033[0m'
-  elif [[ -f "$run_folder/.run_begin" ]] && [[ ! "$MANIFEST" -nt "$run_folder/.run_begin" ]]; then
-    status=$'\033[92mRUNNING\033[0m'
-  else
-    status=$'\033[2mPENDING\033[0m'
-  fi
-  if [[ "$path" == *"/tasks/"* ]]; then
-    display_path="tasks/${path#*/tasks/}"
-  else
-    display_path="$path"
-  fi
-  printf "%-7s  %-27s  %-64s  %b\n" "${job_id}/${idx}" "$run" "$display_path" "$status"
-done < <(awk -F'\t' 'BEGIN{j=""} /^JOB\t/ {j=$2; next} /^[0-9]+\t/ {print j"\t"$0}' "$MANIFEST")
-EXIT_SCRIPT
-  chmod +x "$inv_dir/show_exit_states.sh"
+REPOSITORY_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+exec "$REPOSITORY_ROOT/run_tasks.sh" --status-manifest="$(dirname "$0")/manifest"
+STATUS_HELPER
+  chmod +x "$inv_dir/status.sh"
 
   echo "$manifest_path"
 }
