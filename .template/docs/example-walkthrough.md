@@ -118,7 +118,7 @@ RUN_SPECS uses the same format for execute, clean, and dependency specs: a comma
 
 ## Running the Example
 
-Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPECS` in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `--workload-manager=workload_managers/palmaII-skylake.sh`. To remove task output, use `--clean`.
+Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPECS` in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh` (KEY=VALUE override). To remove task output, use `--clean`.
 
 **Step-by-step:**
 
@@ -148,5 +148,5 @@ Run the workflow in order: build, create data, run experiments, then plot. Becau
 **With a cluster workload manager (parallel submission):**
 
 ```bash
-./run_tasks.sh --workload-manager=workload_managers/palmaII-skylake.sh
+./run_tasks.sh WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh
 ```
