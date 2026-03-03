@@ -19,9 +19,10 @@ print_task_run_status() {
     path="${path#*	}"
     [[ -z "$path" ]] && continue
 
-    if [[ "$display_id" != "$prev_id" ]]; then
+    job_id="${display_id%%/*}"
+    if [[ "$job_id" != "$prev_id" ]]; then
       [[ -n "$prev_id" ]] && echo ""
-      prev_id="$display_id"
+      prev_id="$job_id"
     fi
 
     run_folder="$REPOSITORY_ROOT/$path/$run"

@@ -21,7 +21,7 @@ main() {
         [[ -z "$path" ]] && continue
         seen_path_run["$path	$run"]=1
         RUN_STATUS_ROWS+=("$job_id/$idx	$run	$path")
-      done < <(awk -F'\t' 'BEGIN{j=""} /^JOB\t/ {j=$2; next} /^[0-9]+\t/ {print j"\t"$0}' "$STATUS_MANIFEST")
+      done < <(awk -F'\t' 'BEGIN{j=""} /^JOB\t/ {j=$2; next} /^[0-9]+\t/ {print j"\t"$1"\t"$2"\t"$3}' "$STATUS_MANIFEST")
     fi
 
     if [[ "$STATUS_MODE" == true && ${#TASK_SPECS[@]} -eq 0 ]]; then
