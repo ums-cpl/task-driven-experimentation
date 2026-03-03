@@ -111,6 +111,7 @@ _wm_slurm_default_sbatch() {
   echo "#SBATCH --cpus-per-task=${SBATCH_CPUS_PER_TASK}"
   echo "#SBATCH --mem=${SBATCH_MEM}"
   echo "#SBATCH --time=${SBATCH_TIME:-2:00:00}"
+  echo "#SBATCH --kill-on-invalid-dep=yes"
   echo "#SBATCH --job-name=${job_name_val}_${jid}"
   echo "#SBATCH --output=${LOG_DIR}/job${jid}_%a.log"
   [[ -n "$dep_line" ]] && echo "$dep_line"
