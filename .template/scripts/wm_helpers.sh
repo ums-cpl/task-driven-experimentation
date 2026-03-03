@@ -23,7 +23,7 @@ wm_parse_manifest_for_stage() {
       continue
     fi
     [[ "$line" == "---" ]] && continue
-    if [[ "$line" == JOB* ]]; then
+    if [[ "$line" == $'JOB\t'* ]]; then
       current_job=$(echo "$line" | cut -f2)
       current_stage=""
       current_wm=""
