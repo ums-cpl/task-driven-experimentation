@@ -65,7 +65,7 @@ wm_load_wm_job_ids() {
   declare -gA WM_ID_MAP
   local wm_job_ids_file="$log_dir/wm_job_ids"
   if [[ -f "$wm_job_ids_file" ]]; then
-    while IFS= read -r mjid wmid; do
+    while IFS=$'\t' read -r mjid wmid; do
       [[ -n "$mjid" ]] && WM_ID_MAP["$mjid"]="$wmid"
     done < "$wm_job_ids_file"
   fi
