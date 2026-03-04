@@ -58,6 +58,6 @@ for jid in "${WM_JOB_IDS[@]}"; do
   done
 done
 
-echo ""
 echo "Stage $STAGE: $succeeded successes, $failed failures."
+echo ""
 exit $((failed > 0 ? 1 : 0))

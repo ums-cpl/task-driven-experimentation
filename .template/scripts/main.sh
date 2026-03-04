@@ -157,6 +157,13 @@ main() {
       fi
     done < "$manifest_path"
 
+    # Initial progress: tasks, runs, stages (from manifest)
+    manifest_runs=$(awk -F'\t' '/^[0-9]+\t/ {c++} END{print c+0}' "$manifest_path")
+    manifest_tasks=$(awk -F'\t' '/^[0-9]+\t/ {print $3}' "$manifest_path" | sort -u | wc -l)
+    num_stages=$((max_stage_manifest + 1))
+    echo "Running $manifest_tasks task(s) with $manifest_runs run(s) in $num_stages stage(s)."
+    echo ""
+
     if [[ "$all_direct" == true ]]; then
       # All-direct mode: invoke direct.sh once per stage (no wm_job_ids)
       for stage in $(seq 0 "$max_stage_manifest"); do
