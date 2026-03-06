@@ -99,6 +99,11 @@ parse_args() {
         ENV_OVERRIDES+=("$1")
         shift
         ;;
+      --*)
+        echo "Error: Unrecognised option: $1" >&2
+        echo "Use --help for usage." >&2
+        exit 1
+        ;;
       *)
         TASK_SPECS+=("$1")
         # Snapshot current overrides for this task spec (tab-separated; order preserved for later "last per key")
