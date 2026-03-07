@@ -26,7 +26,7 @@ main() {
 
     if [[ "$STATUS_MODE" == true && ${#TASK_SPECS[@]} -eq 0 ]]; then
       TASK_SPECS=("tasks")
-      TASK_SPEC_OVERRIDES=("")
+      TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
     fi
     if [[ ${#TASK_SPECS[@]} -gt 0 ]]; then
       build_task_run_pairs
@@ -47,7 +47,7 @@ main() {
   # When no tasks specified, run all tasks under tasks/
   if [[ ${#TASK_SPECS[@]} -eq 0 ]]; then
     TASK_SPECS=("tasks")
-    TASK_SPEC_OVERRIDES=("")
+    TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
   fi
   ORIGINAL_TASK_SPEC_COUNT=${#TASK_SPECS[@]}
 
