@@ -84,6 +84,7 @@ A **task** is a static definition of work. A **task run** is a concrete executio
 | `CONTAINER`        | Container image (`.sif`) to use for task runs                                                     |
 | `CONTAINER_DEF`    | Definition file (`.def`) to validate the container against                                        |
 | `CONTAINER_GPU`    | Set to `ON` if the container uses a GPU                                                           |
+| `CONTAINER_FLAGS`  | Extra flags passed to `apptainer exec` (e.g. `--userns` on systems where setuid is unavailable).  |
 | `RUN_SPECS`        | Default task runs to execute (e.g. `assets`, `run-{1:10}`). Comma-separated list of RUN_SPECs; each may use `{a,b,c}` and `{start:end}`. |
 | `WORKLOAD_MANAGER` | Workload manager script to use for this task (default: `workload_managers/direct.sh`)             |
 | `JOB_NAME`         | Job name for the workload manager, e.g. SLURM job name (default: `run_tasks`)                     |

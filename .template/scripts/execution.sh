@@ -133,7 +133,7 @@ $source_cmds_meta
 if [[ -z "\${CONTAINER_INNER:-}" ]] && [[ -n "\${CONTAINER:-}" ]]; then
   gpu_flag=""
   [[ -n "\${CONTAINER_GPU:-}" ]] && gpu_flag="--nv "
-  exec apptainer exec \$gpu_flag -B "$REPOSITORY_ROOT:$REPOSITORY_ROOT" "\$CONTAINER" env CONTAINER_INNER=1 bash "\$(cd "\$(dirname "\$0")" && pwd)/.run_script.sh"
+  exec apptainer exec \${CONTAINER_FLAGS:-} \$gpu_flag -B "$REPOSITORY_ROOT:$REPOSITORY_ROOT" "\$CONTAINER" env CONTAINER_INNER=1 bash "\$(cd "\$(dirname "\$0")" && pwd)/.run_script.sh"
 fi
 
 # Export RUN_ID and source run_env.sh chain (runtime helpers)
@@ -160,6 +160,7 @@ $overrides_meta  echo ""
   echo "CONTAINER=\${CONTAINER:-}"
   echo "CONTAINER_DEF=\${CONTAINER_DEF:-}"
   echo "CONTAINER_GPU=\${CONTAINER_GPU:-}"
+  echo "CONTAINER_FLAGS=\${CONTAINER_FLAGS:-}"
   echo "RUN_SPECS=\${RUN_SPECS:-}"
   echo "WORKLOAD_MANAGER=\${WORKLOAD_MANAGER:-}"
   echo "TASK_DISABLED=\${TASK_DISABLED:-}"
