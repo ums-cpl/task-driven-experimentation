@@ -9,6 +9,7 @@ MANIFEST="${1:?Error: Manifest path required.}"
 LOG_DIR="${2:?Error: Log directory required.}"
 STAGE="${3:?Error: Stage number required.}"
 [[ ! -f "$MANIFEST" ]] && { echo "Error: Manifest not found: $MANIFEST" >&2; exit 1; }
+mkdir -p "$LOG_DIR"
 
 OUR_SCRIPT_ABS="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
@@ -48,7 +49,7 @@ for jid in "${WM_JOB_IDS[@]}"; do
       run_name="?"
     fi
     printf "[%0${#total_ops}d/%0${#total_ops}d] %s/%s ... " "$current" "$total_ops" "$display_path" "$run_name"
-    if "$RUNNER" --array-manifest="$MANIFEST" --array-job-id="$jid" --array-task-id="$idx" > /dev/null 2>&1; then
+    if "$RUNNER" --array-manifest="$MANIFEST" --array-job-id="$jid" --array-task-id="$idx" > "$LOG_DIR/job${jid}_${idx}.log" 2>&1; then
       echo -e "\033[0;32mSUCCESS\033[0m"
       succeeded=$((succeeded + 1))
     else
