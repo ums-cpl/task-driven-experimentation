@@ -1,28 +1,5 @@
 #!/usr/bin/env bash
-# Runner script for tasks. Executes tasks with proper environment setup,
-# logging, and success tracking. See readme.md for design details.
-
+# Wrapper: delegates to .template/run_tasks.sh
 set -euo pipefail
-
-# Abort whole run on CTRL+C (SIGINT)
-trap 'echo ""; echo "Interrupted. Aborting run." >&2; exit 130' INT
-
-REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE="$REPOSITORY_ROOT/.template"
-TASKS="$REPOSITORY_ROOT/tasks"
-ASSETS="$REPOSITORY_ROOT/assets"
-WORKLOAD_MANAGERS="$TEMPLATE/workload_managers"
-CONTAINER_MANAGERS="$TEMPLATE/container_managers"
-RUN_TASKS_LIB="$REPOSITORY_ROOT/.template/scripts"
-
-source "$RUN_TASKS_LIB/config.sh"
-source "$RUN_TASKS_LIB/args.sh"
-source "$RUN_TASKS_LIB/run_spec.sh"
-source "$RUN_TASKS_LIB/task_run_resolution.sh"
-source "$RUN_TASKS_LIB/env.sh"
-source "$RUN_TASKS_LIB/stages.sh"
-source "$RUN_TASKS_LIB/status.sh"
-source "$RUN_TASKS_LIB/execution.sh"
-source "$RUN_TASKS_LIB/main.sh"
-
-main "$@"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "$REPO_ROOT/.template/run_tasks.sh" "$@"
