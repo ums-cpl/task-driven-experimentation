@@ -1,0 +1,18 @@
+# Same-stage tasks with different RUN_WORKLOAD_NAMEs get separate JOB blocks
+--dry-run RUN_WORKLOAD_NAME=a tasks/build/containers/gcc RUN_WORKLOAD_NAME=b tasks/build/containers/plot
+EXPECT_SUCCESS:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	a
+WORKLOAD_MANAGER	workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_NAME=a
+---
+JOB	1
+STAGE	0
+WORKLOAD_NAME	b
+WORKLOAD_MANAGER	workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/build/containers/plot	RUN_WORKLOAD_NAME=b

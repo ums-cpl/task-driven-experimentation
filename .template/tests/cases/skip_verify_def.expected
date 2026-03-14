@@ -5,7 +5,7 @@ SKIP_VERIFY_DEF=true
 ---
 JOB	0
 STAGE	0
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/build/containers/gcc

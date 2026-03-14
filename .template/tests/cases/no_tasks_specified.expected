@@ -5,7 +5,7 @@ SKIP_VERIFY_DEF=false
 ---
 JOB	0
 STAGE	0
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/build/containers/plot
@@ -13,7 +13,7 @@ DEPENDS
 ---
 JOB	1
 STAGE	1
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	0
 0	assets	tasks/build/data
@@ -22,7 +22,7 @@ DEPENDS	0
 ---
 JOB	2
 STAGE	2
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	1
 0	assets	tasks/experiment/MatMul/IS1/data
@@ -30,7 +30,7 @@ DEPENDS	1
 ---
 JOB	3
 STAGE	3
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	2
 0	assets-run-1	tasks/experiment/MatMul/IS1/optimized
@@ -76,7 +76,7 @@ DEPENDS	2
 ---
 JOB	4
 STAGE	4
-JOB_NAME	run_tasks
+WORKLOAD_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	3
 0	assets	tasks/plot

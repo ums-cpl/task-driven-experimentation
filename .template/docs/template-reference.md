@@ -104,7 +104,7 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 | `RUN_CONTAINER_FLAGS`   | Extra flags passed to the container runtime                                                                                       |
 | `RUN_CONTAINER_MANAGER` | Container manager script (default: `container_managers/apptainer.sh`)                                                             |
 | `RUN_WORKLOAD_MANAGER`  | Workload manager script for this run (default: `workload_managers/direct.sh`)                                                     |
-| `RUN_JOB_NAME`          | Job name for the workload manager (e.g. SLURM job name; default: `run_tasks`)                                                      |
+| `RUN_WORKLOAD_NAME`     | Workload name for the workload manager (e.g. SLURM job name; default: `run_tasks`)                                                 |
 
 **Priority** (highest to lowest): `KEY=VALUE` env override on the command line > value from `run_meta.sh` chain (root-to-leaf) > built-in default.
 
@@ -145,7 +145,7 @@ Containers provide a fixed environment for running tasks and document how to bui
 
 ## Workload Managers
 
-Execution always goes through a workload manager. `run_tasks.sh` creates a single manifest and invokes workload manager scripts per stage. The default is `workload_managers/direct.sh`, which runs tasks sequentially in the current process (no cluster). For cluster execution, set `RUN_WORKLOAD_MANAGER` and `RUN_JOB_NAME` in `run_meta.sh` or via `KEY=VALUE` overrides (e.g. `RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/...`). Cluster scripts submit jobs to the scheduler (e.g. SLURM). You cannot mix `direct.sh` with other workload managers in the same invocation; the framework errors at manifest creation if both appear.
+Execution always goes through a workload manager. `run_tasks.sh` creates a single manifest and invokes workload manager scripts per stage. The default is `workload_managers/direct.sh`, which runs tasks sequentially in the current process (no cluster). For cluster execution, set `RUN_WORKLOAD_MANAGER` and `RUN_WORKLOAD_NAME` in `run_meta.sh` or via `KEY=VALUE` overrides (e.g. `RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/...`). Cluster scripts submit jobs to the scheduler (e.g. SLURM). You cannot mix `direct.sh` with other workload managers in the same invocation; the framework errors at manifest creation if both appear.
 
 Several cluster workload manager scripts are provided in the `workload_managers/` directory, categorized by CPU or GPU architecture and expected runtime. Scripts with suffixes like `l`, `xl`, or `xxl` are for longer runtimes; the `compact` script is suited for sequential or low-resource tasks such as compilation. Walltime is hardcoded per script (e.g. `SBATCH_TIME` in each script).
 
@@ -175,7 +175,7 @@ where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based run index with
 
 - `JOB\t<id>` — unique job id
 - `STAGE\t<N>` — stage number
-- `JOB_NAME\t<name>` — job name for the WM (e.g. `#SBATCH --job-name`)
+- `WORKLOAD_NAME\t<name>` — workload name for the WM (e.g. `#SBATCH --job-name`)
 - `WORKLOAD_MANAGER\t<script path>` — script that owns this job
 - `DEPENDS\t<comma-separated manifest job ids or empty>`
 - Run lines: `<idx>\t<run_name>\t<task_path>[\tKEY=VALUE...]`. PATH is relative to REPOSITORY_ROOT. Per-run overrides appear as extra tab-separated fields.

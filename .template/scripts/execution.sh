@@ -150,7 +150,7 @@ $overrides_meta  echo ""
   echo "RUN_CONTAINER_FLAGS=\${RUN_CONTAINER_FLAGS:-}"
   echo "RUN_CONTAINER_MANAGER=\${RUN_CONTAINER_MANAGER:-}"
   echo "RUN_WORKLOAD_MANAGER=\${RUN_WORKLOAD_MANAGER:-}"
-  echo "RUN_JOB_NAME=\${RUN_JOB_NAME:-}"
+  echo "RUN_WORKLOAD_NAME=\${RUN_WORKLOAD_NAME:-}"
   echo "RUN_ID=\${RUN_ID:-}"
   echo ""
 
@@ -210,8 +210,8 @@ is_direct_wm() {
   [[ "$wm" == *"/direct.sh" ]] || [[ "$wm" == "workload_managers/direct.sh" ]]
 }
 
-# Creates a single manifest file. Group by (stage, JOB_NAME, WORKLOAD_MANAGER).
-# Format: header (SKIP_VERIFY_DEF, ---), then JOB blocks with STAGE, JOB_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
+# Creates a single manifest file. Group by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER).
+# Format: header (SKIP_VERIFY_DEF, ---), then JOB blocks with STAGE, WORKLOAD_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
 # Errors if both direct.sh and other WMs appear (mixing not supported).
 # When RUN_TASKS_PRECOMPUTED_TASK_STAGE and RUN_TASKS_PRECOMPUTED_MAX_STAGE are set, uses them.
 create_manifest() {
@@ -233,20 +233,20 @@ create_manifest() {
     compute_stages "$2" "$1" task_stage max_stage task_dep_checks
   fi
 
-  # Group pair indices by (stage, JOB_NAME, WORKLOAD_MANAGER)
+  # Group pair indices by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER)
   declare -A group_keys=()
   declare -A group_pairs=()
   local has_direct=false
   local has_non_direct=false
-  local idx pair occ_key st wm jname key
+  local idx pair occ_key st wm wname key
   for ((idx=0; idx<${#_task_run_pairs[@]}; idx++)); do
     pair="${_task_run_pairs[$idx]}"
     occ_key="${TASK_RUN_PAIR_OCC_KEYS[$idx]:-}"
     st="${task_stage[$occ_key]:--1}"
     wm="${TASK_RUN_PAIR_WM[$idx]:-workload_managers/direct.sh}"
-    jname="${TASK_RUN_PAIR_JOB_NAME[$idx]:-}"
+    wname="${TASK_RUN_PAIR_WORKLOAD_NAME[$idx]:-}"
     is_direct_wm "$wm" && has_direct=true || has_non_direct=true
-    key="${st}	${jname}	${wm}"
+    key="${st}	${wname}	${wm}"
     group_keys["$key"]=1
     group_pairs["$key"]="${group_pairs["$key"]:+${group_pairs["$key"]} }$idx"
   done
@@ -306,13 +306,13 @@ create_manifest() {
     stage_job_ids["$stage"]="${stage_job_ids[$stage]:+${stage_job_ids[$stage]},}$jid"
   done
 
-  # Invocation dir name: first non-empty JOB_NAME in manifest, else run_tasks
+  # Invocation dir name: first non-empty WORKLOAD_NAME in manifest, else run_tasks
   job_safe="run_tasks"
   for key in "${emitted_keys[@]}"; do
-    jname="${key#*	}"
-    jname="${jname%%	*}"
-    if [[ -n "$jname" ]]; then
-      job_safe="${jname//[\/ ]/_}"
+    wname="${key#*	}"
+    wname="${wname%%	*}"
+    if [[ -n "$wname" ]]; then
+      job_safe="${wname//[\/ ]/_}"
       break
     fi
   done
@@ -333,8 +333,8 @@ create_manifest() {
       [[ "$block_started" == true ]] && echo "---"
       block_started=true
       stage="${key%%	*}"
-      jname="${key#*	}"
-      jname="${jname%%	*}"
+      wname="${key#*	}"
+      wname="${wname%%	*}"
       wm="${key#*	}"
       wm="${wm#*	}"
       job_id="${key_to_job_id[$key]}"
@@ -353,7 +353,7 @@ create_manifest() {
 
       echo "JOB	$job_id"
       echo "STAGE	$stage"
-      echo "JOB_NAME	$jname"
+      echo "WORKLOAD_NAME	$wname"
       echo "WORKLOAD_MANAGER	$wm"
       echo "DEPENDS	$dep_list"
       i=0

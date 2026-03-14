@@ -4,7 +4,7 @@
 RUNNER="${REPOSITORY_ROOT:?}/run_tasks.sh"
 
 # Parse manifest for JOBs in the given stage that match our WM identity.
-# Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_JOB_NAME (associative).
+# Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative).
 wm_parse_manifest_for_stage() {
   local manifest="$1"
   local stage="$2"
@@ -12,8 +12,8 @@ wm_parse_manifest_for_stage() {
   [[ ! -f "$manifest" ]] && { echo "Error: Manifest not found: $manifest" >&2; exit 1; }
 
   WM_JOB_IDS=()
-  unset WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_JOB_NAME 2>/dev/null || true
-  declare -gA WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_JOB_NAME
+  unset WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME 2>/dev/null || true
+  declare -gA WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME
   local current_job="" current_stage="" current_wm="" in_header=true
   declare -A job_id_seen=()
 
@@ -33,8 +33,8 @@ wm_parse_manifest_for_stage() {
       current_stage=$(echo "$line" | cut -f2)
       continue
     fi
-    if [[ "$line" == JOB_NAME* ]]; then
-      WM_JOB_NAME["$current_job"]=$(echo "$line" | cut -f2)
+    if [[ "$line" == WORKLOAD_NAME* ]]; then
+      WM_WORKLOAD_NAME["$current_job"]=$(echo "$line" | cut -f2)
       continue
     fi
     if [[ "$line" == WORKLOAD_MANAGER* ]]; then
@@ -99,11 +99,11 @@ wm_get_manifest_task_line() {
 }
 
 # Default SLURM sbatch template: prints the full sbatch script for one job.
-# Args: JID ARRAY_MAX DEP_LINE GRES_LINE JOB_NAME
+# Args: JID ARRAY_MAX DEP_LINE GRES_LINE WORKLOAD_NAME
 # Uses from environment: MANIFEST, LOG_DIR, SBATCH_PARTITION, SBATCH_CPUS_PER_TASK,
 #   SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES.
 _wm_slurm_default_sbatch() {
-  local jid="$1" array_max="$2" dep_line="$3" gres_line="$4" job_name_val="$5"
+  local jid="$1" array_max="$2" dep_line="$3" gres_line="$4" workload_name_val="$5"
   echo "#!/bin/bash"
   echo "#SBATCH --array=0-${array_max}"
   echo "#SBATCH --partition=${SBATCH_PARTITION}"
@@ -112,7 +112,7 @@ _wm_slurm_default_sbatch() {
   echo "#SBATCH --mem=${SBATCH_MEM}"
   echo "#SBATCH --time=${SBATCH_TIME:-2:00:00}"
   echo "#SBATCH --kill-on-invalid-dep=yes"
-  echo "#SBATCH --job-name=${job_name_val}_${jid}"
+  echo "#SBATCH --job-name=${workload_name_val}_${jid}"
   echo "#SBATCH --output=${LOG_DIR}/job${jid}_%a.log"
   [[ -n "$dep_line" ]] && echo "$dep_line"
   echo ""
@@ -127,7 +127,7 @@ _wm_slurm_default_sbatch() {
 #
 # Usage: wm_slurm_submit_stage MANIFEST LOG_DIR STAGE [TEMPLATE_FN]
 #   TEMPLATE_FN optional; function name that prints the sbatch script for one job.
-#   Called as: TEMPLATE_FN JID ARRAY_MAX DEP_LINE GRES_LINE JOB_NAME
+#   Called as: TEMPLATE_FN JID ARRAY_MAX DEP_LINE GRES_LINE WORKLOAD_NAME
 #   If omitted, _wm_slurm_default_sbatch is used.
 wm_slurm_submit_stage() {
   local manifest="${1:?Error: Manifest path required.}"
@@ -140,7 +140,7 @@ wm_slurm_submit_stage() {
   wm_parse_manifest_for_stage "$manifest" "$stage" "$our_wm_abs"
   wm_load_wm_job_ids "$log_dir"
 
-  local jid array_max dep_slurm dep_line gres_line job_name_val tmp slurm_id wmid
+  local jid array_max dep_slurm dep_line gres_line workload_name_val tmp slurm_id wmid
   for jid in "${WM_JOB_IDS[@]}"; do
     array_max=$((${WM_JOB_TASK_COUNT["$jid"]:-0} - 1))
     dep_slurm=""
@@ -153,10 +153,10 @@ wm_slurm_submit_stage() {
     [[ -n "$dep_slurm" ]] && dep_line="#SBATCH --dependency=afterok:$dep_slurm"
     gres_line=""
     [[ -n "${SBATCH_GRES:-}" ]] && gres_line="#SBATCH --gres=${SBATCH_GRES}"
-    job_name_val="${WM_JOB_NAME[$jid]:-run_tasks}"
+    workload_name_val="${WM_WORKLOAD_NAME[$jid]:-run_tasks}"
 
     tmp=$(mktemp)
-    "$template_fn" "$jid" "$array_max" "$dep_line" "$gres_line" "$job_name_val" > "$tmp"
+    "$template_fn" "$jid" "$array_max" "$dep_line" "$gres_line" "$workload_name_val" > "$tmp"
     slurm_id=$(sbatch --parsable "$tmp")
     rm -f "$tmp"
     echo "$jid	$slurm_id" >> "$log_dir/wm_job_ids"

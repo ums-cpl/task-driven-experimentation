@@ -90,7 +90,7 @@ resolve_task_var_isset() {
 }
 
 # Source task_meta.sh then run_meta.sh chain (with RUN_ID set) in a subshell and echo
-# the requested variable. Used to resolve RUN_DISABLED, RUN_CONTAINER*, RUN_WORKLOAD_MANAGER, RUN_JOB_NAME per run.
+# the requested variable. Used to resolve RUN_DISABLED, RUN_CONTAINER*, RUN_WORKLOAD_MANAGER, RUN_WORKLOAD_NAME per run.
 resolve_run_var() {
   local task_dir="$1"
   local run_name="$2"
