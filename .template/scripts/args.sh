@@ -19,7 +19,7 @@ Options:
   --clean                Remove output folders for specified tasks, do not run
   --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
   --skip-verify-def      Skip verification that container image matches definition file
-  --run-disabled         Run runs even if RUN_DISABLED is set in run_meta.sh
+  --include-disabled     Run runs even if RUN_DISABLED is set in run_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
   --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE Show exit states for all task runs listed in FILE (manifest from a prior run)
@@ -75,8 +75,8 @@ parse_args() {
         SKIP_VERIFY_DEF=true
         shift
         ;;
-      --run-disabled)
-        FORCE_DISABLED=true
+      --include-disabled)
+        INCLUDE_DISABLED=true
         shift
         ;;
       --include-deps)

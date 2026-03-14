@@ -115,7 +115,7 @@ main() {
           echo "  - $spec" >&2
         done
         echo "" >&2
-        echo "Use --run-disabled to run disabled dependency tasks." >&2
+        echo "Use --include-disabled to run disabled dependency tasks." >&2
         exit 1
       fi
       build_task_run_pairs

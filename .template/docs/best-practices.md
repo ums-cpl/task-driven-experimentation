@@ -12,7 +12,7 @@ This document describes recommended practices for repositories based on this tem
 
 **Examples:**
 
-- A benchmark repository's main goal is to produce plots. Running `./run_tasks.sh tasks/` executes build → data → experiment → plot in dependency order. Exploratory tasks (e.g., a broken alternative implementation) are disabled and can be run with `--run-disabled` when needed.
+- A benchmark repository's main goal is to produce plots. Running `./run_tasks.sh tasks/` executes build → data → experiment → plot in dependency order. Exploratory tasks (e.g., a broken alternative implementation) are disabled and can be run with `--include-disabled` when needed.
 - A repository with multiple research directions keeps only the published pipeline enabled; exploratory branches are disabled to avoid accidental inclusion in artifact packing.
 
 ---
@@ -48,7 +48,7 @@ This document describes recommended practices for repositories based on this tem
 
 ### Document broken, abandoned, or superseded steps
 
-> Document steps (or tasks) that are broken, abandoned, or superseded using the same template as for enabled steps, with two differences: add "(DISABLED)" after the step name, and use the first entry (Purpose) to state the reason why the step is disabled (e.g., that it no longer builds, was discontinued, or was replaced by a better approach). Use `RUN_DISABLED=true` in `run_meta.sh` to exclude such runs from normal invocations. Keep disabled steps in the repository (and therefore in the documentation) only if they serve a purpose -- for example, to preserve historical context or to allow running them with `--run-disabled` when needed.
+> Document steps (or tasks) that are broken, abandoned, or superseded using the same template as for enabled steps, with two differences: add "(DISABLED)" after the step name, and use the first entry (Purpose) to state the reason why the step is disabled (e.g., that it no longer builds, was discontinued, or was replaced by a better approach). Use `RUN_DISABLED=true` in `run_meta.sh` to exclude such runs from normal invocations. Keep disabled steps in the repository (and therefore in the documentation) only if they serve a purpose -- for example, to preserve historical context or to allow running them with `--include-disabled` when needed.
 
 **Example template for documenting a disabled step of the workflow (copy and fill in):**
 

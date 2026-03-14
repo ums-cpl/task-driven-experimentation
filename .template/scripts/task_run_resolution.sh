@@ -214,7 +214,7 @@ build_task_run_pairs() {
         read -ra truns <<< "${task_runs[$t]:-}"
         if [[ $run_idx -lt ${#truns[@]} ]]; then
           local run_name="${truns[$run_idx]}"
-          if [[ "$FORCE_DISABLED" != true ]]; then
+          if [[ "$INCLUDE_DISABLED" != true ]]; then
             ENV_OVERRIDES=()
             [[ -n "$effective_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$effective_ov_tsv"
             local run_disabled

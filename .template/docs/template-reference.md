@@ -31,7 +31,7 @@ Optional suffix `:TASK_RUNS` overrides the task's `TASK_RUNS` (set in `task_meta
 | `--clean`           | Remove output folders for specified tasks                                                         |
 | `--skip-succeeded`  | Skip task runs that have already succeeded (`.run_success` exists).                               |
 | `--skip-verify-def` | Skip verification that container image matches definition file                                    |
-| `--run-disabled`    | Run runs even if `RUN_DISABLED` is set in `run_meta.sh`                                           |
+| `--include-disabled`    | Run runs even if `RUN_DISABLED` is set in `run_meta.sh`                                           |
 | `--include-deps`    | Include missing dependency task runs in the invocation instead of failing                         |
 
 
@@ -97,7 +97,7 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 
 | Variable                | Description                                                                                                                       |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `RUN_DISABLED`          | Set to `true` (or `1`, `yes`) to skip this run; skipped unless `--run-disabled` is used                                           |
+| `RUN_DISABLED`          | Set to `true` (or `1`, `yes`) to skip this run; skipped unless `--include-disabled` is used                                           |
 | `RUN_CONTAINER`         | Container image for this run (e.g. a `.sif` path)                                                                                 |
 | `RUN_CONTAINER_DEF`     | Definition file to validate the container against                                                                                  |
 | `RUN_CONTAINER_GPU`     | Set to `ON` if the container uses a GPU                                                                                           |

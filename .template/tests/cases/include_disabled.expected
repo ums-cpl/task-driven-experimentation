@@ -1,5 +1,5 @@
-# --run-disabled: include RUN_DISABLED run (e.g. build/debug)
---dry-run --run-disabled --include-deps tasks/build/debug
+# --include-disabled: include RUN_DISABLED run (e.g. build/debug)
+--dry-run --include-disabled --include-deps tasks/build/debug
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---

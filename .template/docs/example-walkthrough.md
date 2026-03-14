@@ -84,7 +84,7 @@ Build tasks use `RUN_SPECS=$BUILD_FOLDER`, which gives them a single named run f
 The `tasks/build/debug/` task compiles the baseline matmul binary with debug symbols (`-O0 -g`) for troubleshooting. It is disabled by default because it is not part of the main artifact pipeline. To run it when needed, use:
 
 ```bash
-./run_tasks.sh --run-disabled tasks/build/debug
+./run_tasks.sh --include-disabled tasks/build/debug
 ```
 
 ### Experiment Tasks (`tasks/experiment/`)
