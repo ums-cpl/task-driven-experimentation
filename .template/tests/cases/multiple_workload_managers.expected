@@ -1,18 +1,18 @@
 # Single manifest with cross-WM deps: gcc (skylake-compact, stage 0), data (gpu4090, stage 1)
---dry-run RUN_WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh --include-deps tasks/build/data
+--dry-run RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh --include-deps tasks/build/data
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---
 JOB	0
 STAGE	0
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	workload_managers/palmaII-skylake-compact.sh
+WORKLOAD_MANAGER	.template/workload_managers/palmaII-skylake-compact.sh
 DEPENDS	
-0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh
+0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake-compact.sh
 ---
 JOB	1
 STAGE	1
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	workload_managers/palmaII-gpu4090.sh
+WORKLOAD_MANAGER	.template/workload_managers/palmaII-gpu4090.sh
 DEPENDS	0
-0	assets	tasks/build/data	RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh
+0	assets	tasks/build/data	RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh

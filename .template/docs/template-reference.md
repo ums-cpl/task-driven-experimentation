@@ -1,6 +1,6 @@
 # Template Reference
 
-This template centers on `run_tasks.sh`, which executes tasks defined under `tasks/`. Tasks invoke code from `assets/`, optionally inside `containers/`, and are executed by a workload manager (by default `workload_managers/direct.sh` runs tasks sequentially in the current process).
+This template centers on `run_tasks.sh`, which executes tasks defined under `tasks/`. Tasks invoke code from `assets/`, optionally inside containers, and are executed by a workload manager (by default `.template/workload_managers/direct.sh` runs tasks sequentially in the current process).
 
 ## run_tasks.sh
 
@@ -41,7 +41,7 @@ Optional suffix `:TASK_RUNS` overrides the task's `TASK_RUNS` (set in `task_meta
 ./run_tasks.sh tasks/build
 ./run_tasks.sh --dry-run tasks/experiment/MatMul
 ./run_tasks.sh tasks/experiment/MatMul/IS1/baseline:run-{1:5}
-./run_tasks.sh RUN_WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh tasks/experiment
+./run_tasks.sh RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake.sh tasks/experiment
 ./run_tasks.sh --clean tasks/experiment:run1
 ```
 
@@ -72,8 +72,9 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 | ---------------------- | ------------------------------------------ |
 | `$ASSETS`              | Path to the `assets/` directory             |
 | `$TASKS`               | Path to the `tasks/` directory             |
-| `$WORKLOAD_MANAGERS`   | Path to the `workload_managers/` directory  |
-| `$CONTAINER_MANAGERS`  | Path to the `container_managers/` directory |
+| `$TEMPLATE`            | Path to the `.template/` directory          |
+| `$WORKLOAD_MANAGERS`   | Path to the `.template/workload_managers/` directory  |
+| `$CONTAINER_MANAGERS`  | Path to the `.template/container_managers/` directory |
 
 
 **Writable variables** (read by the framework):
@@ -102,8 +103,8 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 | `RUN_CONTAINER_DEF`     | Definition file to validate the container against                                                                                  |
 | `RUN_CONTAINER_GPU`     | Set to `ON` if the container uses a GPU                                                                                           |
 | `RUN_CONTAINER_FLAGS`   | Extra flags passed to the container runtime                                                                                       |
-| `RUN_CONTAINER_MANAGER` | Container manager script (default: `container_managers/apptainer.sh`)                                                             |
-| `RUN_WORKLOAD_MANAGER`  | Workload manager script for this run (default: `workload_managers/direct.sh`)                                                     |
+| `RUN_CONTAINER_MANAGER` | Container manager script (default: `.template/container_managers/apptainer.sh`)                                                             |
+| `RUN_WORKLOAD_MANAGER`  | Workload manager script for this run (default: `.template/workload_managers/direct.sh`)                                                     |
 | `RUN_WORKLOAD_NAME`     | Workload name for the workload manager (e.g. SLURM job name; default: `run_tasks`)                                                 |
 
 **Priority** (highest to lowest): `KEY=VALUE` env override on the command line > value from `run_meta.sh` chain (root-to-leaf) > built-in default.
@@ -117,8 +118,9 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 | ---------------------- | ------------------------------------------- |
 | `$ASSETS`              | Path to the `assets/` directory             |
 | `$TASKS`               | Path to the `tasks/` directory              |
-| `$WORKLOAD_MANAGERS`   | Path to the `workload_managers/` directory  |
-| `$CONTAINER_MANAGERS`  | Path to the `container_managers/` directory |
+| `$TEMPLATE`            | Path to the `.template/` directory          |
+| `$WORKLOAD_MANAGERS`   | Path to the `.template/workload_managers/` directory  |
+| `$CONTAINER_MANAGERS`  | Path to the `.template/container_managers/` directory |
 | `$RUN_ID`              | Identifier of the current task run          |
 
 
@@ -141,13 +143,13 @@ Assets hold the actual implementation of experiments. Structure is flexible; the
 
 ## Containers
 
-Containers provide a fixed environment for running tasks and document how to build experiments. They are runtime-only: all task output is stored on the host. The framework is agnostic to the container runtime: a **container manager** script (default `container_managers/apptainer.sh`) provides verification and the exec snippet. Set `RUN_CONTAINER`, `RUN_CONTAINER_DEF`, `RUN_CONTAINER_MANAGER`, etc. in `run_meta.sh` per run; the framework exports them as `CONTAINER`, `CONTAINER_DEF`, etc. for the container manager.
+Containers provide a fixed environment for running tasks and document how to build experiments. They are runtime-only: all task output is stored on the host. The framework is agnostic to the container runtime: a **container manager** script (default `.template/container_managers/apptainer.sh`) provides verification and the exec snippet. Set `RUN_CONTAINER`, `RUN_CONTAINER_DEF`, `RUN_CONTAINER_MANAGER`, etc. in `run_meta.sh` per run; the framework exports them as `CONTAINER`, `CONTAINER_DEF`, etc. for the container manager.
 
 ## Workload Managers
 
-Execution always goes through a workload manager. `run_tasks.sh` creates a single manifest and invokes workload manager scripts per stage. The default is `workload_managers/direct.sh`, which runs tasks sequentially in the current process (no cluster). For cluster execution, set `RUN_WORKLOAD_MANAGER` and `RUN_WORKLOAD_NAME` in `run_meta.sh` or via `KEY=VALUE` overrides (e.g. `RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/...`). Cluster scripts submit jobs to the scheduler (e.g. SLURM). You cannot mix `direct.sh` with other workload managers in the same invocation; the framework errors at manifest creation if both appear.
+Execution always goes through a workload manager. `run_tasks.sh` creates a single manifest and invokes workload manager scripts per stage. The default is `.template/workload_managers/direct.sh`, which runs tasks sequentially in the current process (no cluster). For cluster execution, set `RUN_WORKLOAD_MANAGER` and `RUN_WORKLOAD_NAME` in `run_meta.sh` or via `KEY=VALUE` overrides (e.g. `RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh tasks/...`). Cluster scripts submit jobs to the scheduler (e.g. SLURM). You cannot mix `direct.sh` with other workload managers in the same invocation; the framework errors at manifest creation if both appear.
 
-Several cluster workload manager scripts are provided in the `workload_managers/` directory, categorized by CPU or GPU architecture and expected runtime. Scripts with suffixes like `l`, `xl`, or `xxl` are for longer runtimes; the `compact` script is suited for sequential or low-resource tasks such as compilation. Walltime is hardcoded per script (e.g. `SBATCH_TIME` in each script).
+Several cluster workload manager scripts are provided in the `.template/workload_managers/` directory, categorized by CPU or GPU architecture and expected runtime. Scripts with suffixes like `l`, `xl`, or `xxl` are for longer runtimes; the `compact` script is suited for sequential or low-resource tasks such as compilation. Walltime is hardcoded per script (e.g. `SBATCH_TIME` in each script).
 
 **Interface:** A workload manager script is invoked once per stage:
 

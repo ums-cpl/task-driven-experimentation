@@ -8,10 +8,11 @@ set -euo pipefail
 trap 'echo ""; echo "Interrupted. Aborting run." >&2; exit 130' INT
 
 REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE="$REPOSITORY_ROOT/.template"
 TASKS="$REPOSITORY_ROOT/tasks"
 ASSETS="$REPOSITORY_ROOT/assets"
-WORKLOAD_MANAGERS="$REPOSITORY_ROOT/workload_managers"
-CONTAINER_MANAGERS="$REPOSITORY_ROOT/container_managers"
+WORKLOAD_MANAGERS="$TEMPLATE/workload_managers"
+CONTAINER_MANAGERS="$TEMPLATE/container_managers"
 RUN_TASKS_LIB="$REPOSITORY_ROOT/.template/scripts"
 
 source "$RUN_TASKS_LIB/config.sh"

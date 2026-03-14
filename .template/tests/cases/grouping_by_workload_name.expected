@@ -6,13 +6,13 @@ SKIP_VERIFY_DEF=false
 JOB	0
 STAGE	0
 WORKLOAD_NAME	a
-WORKLOAD_MANAGER	workload_managers/direct.sh
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_NAME=a
 ---
 JOB	1
 STAGE	0
 WORKLOAD_NAME	b
-WORKLOAD_MANAGER	workload_managers/direct.sh
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/build/containers/plot	RUN_WORKLOAD_NAME=b

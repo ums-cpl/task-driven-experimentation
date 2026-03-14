@@ -167,7 +167,7 @@ main() {
     if [[ "$all_direct" == true ]]; then
       # All-direct mode: invoke direct.sh once per stage (no wm_job_ids)
       for stage in $(seq 0 "$max_stage_manifest"); do
-        bash "$REPOSITORY_ROOT/workload_managers/direct.sh" "$manifest_path" "$log_dir" "$stage" || exit $?
+        bash "$TEMPLATE/workload_managers/direct.sh" "$manifest_path" "$log_dir" "$stage" || exit $?
       done
     else
       # Cluster mode: per-stage WM invocation, wm_job_ids in log_dir

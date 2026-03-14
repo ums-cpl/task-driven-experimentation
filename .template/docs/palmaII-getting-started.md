@@ -140,7 +140,7 @@ Modules on Palma II often depend on other modules. When loading a module, its de
 
 > **Note:** This template recommends using only the `Apptainer` module and installing all required software inside a container. This approach provides independence from the software available on Palma II and documents the exact setup steps taken.
 
-If you run tasks using the (default) *direct* workload manager (e.g. `./run_tasks.sh tasks/...` without setting `WORKLOAD_MANAGER` to a Palma script), tasks run in your current shell. Load the Apptainer module first so that container-based tasks can run:
+If you run tasks using the (default) *direct* workload manager (e.g. `./run_tasks.sh tasks/...`), tasks run in your current shell. Load the Apptainer module first so that container-based tasks can run:
 
 ```bash
 module load Apptainer

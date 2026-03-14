@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Configuration variables. REPOSITORY_ROOT, TASKS, ASSETS, WORKLOAD_MANAGERS, CONTAINER_MANAGERS
-# are set by the root script before sourcing.
+# Configuration variables. REPOSITORY_ROOT, TEMPLATE, TASKS, ASSETS, WORKLOAD_MANAGERS, CONTAINER_MANAGERS
+# are set by run_tasks.sh before sourcing.
 
 declare -a TASK_SPECS=()
 declare -a TASK_SPEC_OVERRIDES=()

@@ -10,10 +10,14 @@ This example demonstrates an end-to-end workflow: build, experiment, and plot. T
 
 ## Directory Layout
 
-The example populates the top-level directories: `assets/` (including container definitions under `assets/containers/`), `tasks/`, `container_managers/`, and `workload_managers/`. The following tree shows the layout and key files used in this walkthrough. See the following sections for details.
+The example populates the top-level directories: `assets/` (including container definitions under `assets/containers/`), `tasks/`, and `run_tasks.sh`. The template provides `.template/` with `workload_managers/` and `container_managers/` under it. The following tree shows the layout and key files used in this walkthrough. See the following sections for details.
 
 ```
 .
+|
+|-- .template/
+|   |-- container_managers/      # Container runtime adapters (default: apptainer.sh)
+|   |-- workload_managers/       # Workload manager scripts
 |-- run_tasks.sh                 # Main entry point for running tasks
 |
 |-- assets/                      # Implementation: data generation, experiments, plotting
@@ -33,8 +37,6 @@ The example populates the top-level directories: `assets/` (including container 
 |   |  
 |   |-- plots/
 |       |-- runtimes.py          # Plotting script comparing baseline and optimized runtimes
-|
-|-- container_managers/          # Container runtime adapters (default: apptainer.sh)
 |
 |-- tasks/
 |   |-- build/                   # Build tasks: build containers + binaries
@@ -57,10 +59,6 @@ The example populates the top-level directories: `assets/` (including container 
 |   |   |   |-- optimized/
 |   |
 |   |-- plot/                    # Plot task: aggregate results
-|
-|-- workload_managers/           # workload manager scripts
-    |-- palmaII-skylake.sh       # e.g. palmaII-skylake.sh for cluster runs
-    |-- ...
 ```
 
 ## Assets
@@ -69,7 +67,7 @@ Assets are organized by purpose: data generation, experiment variants, and plott
 
 ## Containers
 
-The example uses two container definitions: one for compilation and one for plotting. Definition files live under `assets/containers/` (e.g. `gcc.def`, `plot.def`). Build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) call `apptainer build` in their `run.sh` to produce `.sif` images. Other tasks set `CONTAINER` and `CONTAINER_DEF` (e.g. `$ASSETS/containers/gcc.def`) in `task_meta.sh`; the framework uses the container manager (default `container_managers/apptainer.sh`) to verify and run inside the container. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
+The example uses two container definitions: one for compilation and one for plotting. Definition files live under `assets/containers/` (e.g. `gcc.def`, `plot.def`). Build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) call `apptainer build` in their `run.sh` to produce `.sif` images. Other tasks set `CONTAINER` and `CONTAINER_DEF` (e.g. `$ASSETS/containers/gcc.def`) in `task_meta.sh`; the framework uses the container manager (default `.template/container_managers/apptainer.sh`) to verify and run inside the container. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
 
 ## Task Hierarchy
 
@@ -119,7 +117,7 @@ RUN_SPECS uses the same format for execute, clean, and dependency specs: a comma
 
 ## Running the Example
 
-Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPECS` in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh` (KEY=VALUE override). To remove task output, use `--clean`.
+Run the workflow in order: build, create data, run experiments, then plot. Because dependencies are declared in `run_deps.sh` and `RUN_SPECS` in `task_meta.sh`, you can also run the full workflow in a single command. By default, the direct workload manager runs tasks sequentially in the current process. For parallel execution on a cluster, pass `RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake.sh` (KEY=VALUE override). To remove task output, use `--clean`.
 
 **Step-by-step:**
 
@@ -149,5 +147,5 @@ Run the workflow in order: build, create data, run experiments, then plot. Becau
 **With a cluster workload manager (parallel submission):**
 
 ```bash
-./run_tasks.sh WORKLOAD_MANAGER=workload_managers/palmaII-skylake.sh
+./run_tasks.sh RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake.sh
 ```

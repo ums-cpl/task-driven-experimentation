@@ -2,7 +2,7 @@
 
 This template simplifies the process of creating an artifact (e.g., a reproducibility artifact for a submission) into the following steps:
 
-1. Gather relevant assets, tasks, containers, workload managers, and `run_tasks.sh` into a new repository.
+1. Gather relevant assets, tasks, the template's `.template/workload_managers/` and `.template/container_managers/` as needed, and `run_tasks.sh` into a new repository.
 2. Create high-level scripts that run the necessary tasks via `run_tasks.sh` (typically: build, create data, run experiments, plot results).
 3. Create an artifact readme.
 4. Distribute:

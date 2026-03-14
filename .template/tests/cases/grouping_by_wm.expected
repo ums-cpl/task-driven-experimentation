@@ -1,18 +1,18 @@
 # Same-stage tasks with different WMs get separate JOB blocks
---dry-run RUN_WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh tasks/build/containers/plot
+--dry-run RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake-compact.sh tasks/build/containers/gcc RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh tasks/build/containers/plot
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---
 JOB	0
 STAGE	0
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	workload_managers/palmaII-skylake-compact.sh
+WORKLOAD_MANAGER	.template/workload_managers/palmaII-skylake-compact.sh
 DEPENDS	
-0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_MANAGER=workload_managers/palmaII-skylake-compact.sh
+0	assets	tasks/build/containers/gcc	RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-skylake-compact.sh
 ---
 JOB	1
 STAGE	0
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	workload_managers/palmaII-gpu4090.sh
+WORKLOAD_MANAGER	.template/workload_managers/palmaII-gpu4090.sh
 DEPENDS	
-0	assets	tasks/build/containers/plot	RUN_WORKLOAD_MANAGER=workload_managers/palmaII-gpu4090.sh
+0	assets	tasks/build/containers/plot	RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh

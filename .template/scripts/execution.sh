@@ -34,7 +34,7 @@ run_task() {
   container_gpu=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_GPU" | xargs)
   container_flags=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_FLAGS" | xargs)
   container_manager_rel=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_MANAGER" | xargs)
-  [[ -z "$container_manager_rel" ]] && container_manager_rel="container_managers/apptainer.sh"
+  [[ -z "$container_manager_rel" ]] && container_manager_rel=".template/container_managers/apptainer.sh"
   local container_manager_script="$container_manager_rel"
   [[ "$container_manager_script" != /* ]] && container_manager_script="$REPOSITORY_ROOT/$container_manager_script"
 
@@ -207,7 +207,7 @@ RUNNER_SCRIPT
 # True if WM path denotes direct.sh (no mixing with cluster WMs).
 is_direct_wm() {
   local wm="$1"
-  [[ "$wm" == *"/direct.sh" ]] || [[ "$wm" == "workload_managers/direct.sh" ]]
+  [[ "$wm" == *"/direct.sh" ]] || [[ "$wm" == ".template/workload_managers/direct.sh" ]]
 }
 
 # Creates a single manifest file. Group by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER).
@@ -243,7 +243,7 @@ create_manifest() {
     pair="${_task_run_pairs[$idx]}"
     occ_key="${TASK_RUN_PAIR_OCC_KEYS[$idx]:-}"
     st="${task_stage[$occ_key]:--1}"
-    wm="${TASK_RUN_PAIR_WM[$idx]:-workload_managers/direct.sh}"
+    wm="${TASK_RUN_PAIR_WM[$idx]:-.template/workload_managers/direct.sh}"
     wname="${TASK_RUN_PAIR_WORKLOAD_NAME[$idx]:-}"
     is_direct_wm "$wm" && has_direct=true || has_non_direct=true
     key="${st}	${wname}	${wm}"
@@ -251,7 +251,7 @@ create_manifest() {
     group_pairs["$key"]="${group_pairs["$key"]:+${group_pairs["$key"]} }$idx"
   done
   if [[ "$has_direct" == true && "$has_non_direct" == true ]]; then
-    echo "Error: Mixing workload_managers/direct.sh with other workload managers is not supported. Use either only direct.sh or only other workload managers." >&2
+    echo "Error: Mixing .template/workload_managers/direct.sh with other workload managers is not supported. Use either only direct.sh or only other workload managers." >&2
     exit 1
   fi
 

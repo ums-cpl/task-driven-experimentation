@@ -265,7 +265,7 @@ build_task_run_pairs() {
     [[ -n "$pair_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$pair_ov_tsv"
     local wm workload_name
     wm=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_MANAGER")
-    [[ -z "$wm" ]] && wm="workload_managers/direct.sh"
+    [[ -z "$wm" ]] && wm=".template/workload_managers/direct.sh"
     workload_name=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_NAME")
     # Default to run_tasks only when RUN_WORKLOAD_NAME is unset (neither in overrides nor run_meta.sh)
     if [[ -z "$workload_name" ]]; then

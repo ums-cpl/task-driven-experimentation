@@ -6,7 +6,7 @@ SKIP_VERIFY_DEF=false
 JOB	0
 STAGE	0
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	workload_managers/direct.sh
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	a-1	tasks/build/containers/gcc	TASK_RUNS={a,b}-{1:2}
 1	a-2	tasks/build/containers/gcc	TASK_RUNS={a,b}-{1:2}
