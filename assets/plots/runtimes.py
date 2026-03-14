@@ -3,7 +3,7 @@
 Plot speedup of competitors over baseline from experiment results.
 
 Expected input structure:
-  <experiment_dir>/<routine>/<input_size>/<competitor>/<device>-run<N>/runtimes
+  <experiment_dir>/<routine>/<input_size>/<competitor>/<device>-run-<N>/runtimes
 
 Each runtimes file contains one runtime value (nanoseconds) per line.
 The "data" competitor folder is ignored.
@@ -28,7 +28,7 @@ def discover_data(
     experiment_dir: Path,
 ) -> dict[tuple[str, str, str, str], list[float]]:
     """
-    Walk experiment_dir/<routine>/<input_size>/<competitor>/<device>-run<N>/runtimes
+    Walk experiment_dir/<routine>/<input_size>/<competitor>/<device>-run-<N>/runtimes
     and return {(routine, input_size, competitor, device): [runtimes]}.
     """
     data: dict[tuple[str, str, str, str], list[float]] = defaultdict(list)
@@ -42,14 +42,16 @@ def discover_data(
             for comp_dir in sorted(is_dir.iterdir()):
                 if not comp_dir.is_dir() or comp_dir.name == "data":
                     continue
-                for run_dir in sorted(comp_dir.iterdir()):
-                    if not run_dir.is_dir():
+                # Iterate over directories named <device>-run-<N>
+                for device_run_dir in sorted(comp_dir.iterdir()):
+                    if not device_run_dir.is_dir():
                         continue
-                    m = re.match(r"^(.+)-run(\d+)$", run_dir.name)
+                    m = re.match(r"^(.+)-run-(\d+)$", device_run_dir.name)
                     if not m:
                         continue
                     device = m.group(1)
-                    runtimes_file = run_dir / "runtimes"
+                    # run_number = m.group(2)   # Not used, but available
+                    runtimes_file = device_run_dir / "runtimes"
                     if not runtimes_file.is_file():
                         continue
                     key = (routine_dir.name, is_dir.name, comp_dir.name, device)
