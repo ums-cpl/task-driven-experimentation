@@ -80,10 +80,10 @@ resolve_task_var() {
   source_cmds=$(build_source_cmds_with_overrides meta_files)
 
   bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds
     echo -n \"\${$var_name:-}\"
   " 2>/dev/null || true
@@ -105,10 +105,10 @@ resolve_task_var_isset() {
   source_cmds=$(build_source_cmds_with_overrides meta_files)
 
   bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds
     if [[ -n \"\${$var_name+x}\" ]]; then echo -n 1; else echo -n 0; fi
   " 2>/dev/null || true
@@ -141,10 +141,10 @@ get_task_dependencies() {
   while IFS= read -r dep; do
     [[ -n "$dep" ]] && _out+=("$dep")
   done < <(bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds_meta
     export RUN_ID=\"$run_name\"
     DEPENDENCIES=()

@@ -4,19 +4,22 @@
 
 This example demonstrates an end-to-end workflow: build, experiment, and plot. The output plot is written to `tasks/plot/assets`. Requires an [Apptainer](https://apptainer.org/) installation.
 
-**What the template provides.** The template provides `run_tasks.sh` and requires work to be divided into `assets/` and `tasks/` that run inside `containers/`. The framework handles task resolution, dependencies, and execution.
+**What the template provides.** The template provides `run_tasks.sh` and requires work to be divided into `assets/` and `tasks/` that run inside containers. Container definition files live under `assets/containers/`. The framework handles task resolution, dependencies, and execution via a pluggable container manager (default: Apptainer).
 
 **What is specific to this example.** How assets and tasks are structured is completely chosen by the example. It shows one best practice: a hierarchical task tree with shared configuration, containerized builds and runs, and executables that accept paths as arguments. With good reason, other structures may be more sensible for different use cases.
 
 ## Directory Layout
 
-The example populates the four top-level directories: `assets/`, `containers/`, `tasks/`, and `workload_managers/`. The following tree shows the layout and key files used in this walkthrough. See the following sections for details.
+The example populates the top-level directories: `assets/` (including container definitions under `assets/containers/`), `tasks/`, `container_managers/`, and `workload_managers/`. The following tree shows the layout and key files used in this walkthrough. See the following sections for details.
 
 ```
 .
 |-- run_tasks.sh                 # Main entry point for running tasks
 |
 |-- assets/                      # Implementation: data generation, experiments, plotting
+|   |-- containers/              # Container definition files (referenced via $ASSETS/containers/)
+|   |   |-- gcc.def              # Build container (compile C++)
+|   |   |-- plot.def             # Plot container (run Python)
 |   |-- data/
 |   |   |-- data_helper.h        # Shared helper providing data utility functions
 |   |   |-- matmul.cpp           # Gold implementation generating inputs and expected outputs
@@ -31,9 +34,7 @@ The example populates the four top-level directories: `assets/`, `containers/`, 
 |   |-- plots/
 |       |-- runtimes.py          # Plotting script comparing baseline and optimized runtimes
 |
-|-- containers/
-|   |-- gcc.def                  # Build container (compile C++)
-|   |-- plot.def                 # Plot container (run Python)
+|-- container_managers/          # Container runtime adapters (default: apptainer.sh)
 |
 |-- tasks/
 |   |-- build/                   # Build tasks: build containers + binaries
@@ -68,7 +69,7 @@ Assets are organized by purpose: data generation, experiment variants, and plott
 
 ## Containers
 
-The example uses two container definitions: one for compilation and one for plotting. Container `.def` files are built into `.sif` images by dedicated build tasks. Other tasks then reference these built containers through `CONTAINER` and verify them against `CONTAINER_DEF`. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
+The example uses two container definitions: one for compilation and one for plotting. Definition files live under `assets/containers/` (e.g. `gcc.def`, `plot.def`). Build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) call `apptainer build` directly in their `run.sh` to produce `.sif` images. Other tasks set `CONTAINER` and `CONTAINER_DEF` (e.g. `$ASSETS/containers/gcc.def`) in `task_meta.sh`; the framework uses the container manager (default `container_managers/apptainer.sh`) to verify and run inside the container. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
 
 ## Task Hierarchy
 

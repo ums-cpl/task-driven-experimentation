@@ -29,10 +29,10 @@ Optional suffix `:RUN_SPECS` overrides the task's `RUN_SPECS` (set in `task_meta
 | ------------------- | ------------------------------------------------------------------------------------------------- |
 | `--dry-run`         | Create manifest without running; print manifest contents to stdout                                |
 | `--clean`           | Remove output folders for specified tasks                                                         |
-| `--skip-succeeded`  | Skip task runs that have already succeeded (`.run_success` exists).                                |
-| `--skip-verify-def` | Skip verification that container `.sif` matches `containers/*.def`                                |
+| `--skip-succeeded`  | Skip task runs that have already succeeded (`.run_success` exists).                               |
+| `--skip-verify-def` | Skip verification that container image matches definition file                                    |
 | `--run-disabled`    | Run tasks even if `TASK_DISABLED` is set in `task_meta.sh`                                        |
-| `--include-deps`    | Include missing dependency task runs in the invocation instead of failing                          |
+| `--include-deps`    | Include missing dependency task runs in the invocation instead of failing                         |
 
 
 **Examples:**
@@ -68,27 +68,28 @@ A **task** is a static definition of work. A **task run** is a concrete executio
 **Available variables** (provided by the framework):
 
 
-| Variable             | Description                                |
-| -------------------- | ------------------------------------------ |
-| `$CONTAINERS`        | Path to the `containers/` directory        |
-| `$ASSETS`            | Path to the `assets/` directory            |
-| `$TASKS`             | Path to the `tasks/` directory             |
-| `$WORKLOAD_MANAGERS` | Path to the `workload_managers/` directory |
+| Variable               | Description                                |
+| ---------------------- | ------------------------------------------ |
+| `$ASSETS`              | Path to the `assets/` directory             |
+| `$TASKS`               | Path to the `tasks/` directory             |
+| `$WORKLOAD_MANAGERS`   | Path to the `workload_managers/` directory  |
+| `$CONTAINER_MANAGERS`  | Path to the `container_managers/` directory |
 
 
 **Writable variables** (read by the framework):
 
 
-| Variable           | Description                                                                                       |
-| ------------------ | ------------------------------------------------------------------------------------------------- |
-| `CONTAINER`        | Container image (`.sif`) to use for task runs                                                     |
-| `CONTAINER_DEF`    | Definition file (`.def`) to validate the container against                                        |
-| `CONTAINER_GPU`    | Set to `ON` if the container uses a GPU                                                           |
-| `CONTAINER_FLAGS`  | Extra flags passed to `apptainer exec` (e.g. `--userns` on systems where setuid is unavailable).  |
-| `RUN_SPECS`        | Default task runs to execute (e.g. `assets`, `run-{1:10}`). Comma-separated list of RUN_SPECs; each may use `{a,b,c}` and `{start:end}`. |
-| `WORKLOAD_MANAGER` | Workload manager script to use for this task (default: `workload_managers/direct.sh`)             |
-| `JOB_NAME`         | Job name for the workload manager, e.g. SLURM job name (default: `run_tasks`)                     |
-| `TASK_DISABLED`    | Set to `true` (or `1`, `yes`) to disable the task; skipped unless `--run-disabled` is used        |
+| Variable            | Description                                                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CONTAINER`         | Container image to use for task runs (e.g. a `.sif` path)                                                                                   |
+| `CONTAINER_DEF`     | Definition file to validate the container against; reference under `$ASSETS/containers/` (e.g. `$ASSETS/containers/gcc.def`)                |
+| `CONTAINER_GPU`     | Set to `ON` if the container uses a GPU                                                                                                     |
+| `CONTAINER_FLAGS`   | Extra flags passed to the container runtime (e.g. `--userns` for Apptainer on systems where setuid is unavailable)                          |
+| `CONTAINER_MANAGER` | Container manager script for verify and exec (default: `container_managers/apptainer.sh`).                                                  |
+| `RUN_SPECS`         | Default task runs to execute (e.g. `assets`, `run-{1:10}`). Comma-separated list of RUN_SPECs; each may use `{a,b,c}` and `{start:end}`.    |
+| `WORKLOAD_MANAGER`  | Workload manager script to use for this task (default: `workload_managers/direct.sh`)                                                       |
+| `JOB_NAME`          | Job name for the workload manager, e.g. SLURM job name (default: `run_tasks`)                                                               |
+| `TASK_DISABLED`     | Set to `true` (or `1`, `yes`) to disable the task; skipped unless `--run-disabled` is used                                                  |
 
 **Priority** (same for all writable variables, highest to lowest): CLI override where applicable (e.g. `:RUN_SPECS` suffix) > `KEY=VALUE` env override on the command line > value from `task_meta.sh` chain (root-to-leaf) > built-in default.
 
@@ -97,13 +98,13 @@ A **task** is a static definition of work. A **task run** is a concrete executio
 
 **`run_env.sh`** -- Hierarchical (sourced root-to-leaf, like `task_meta.sh`). Defines variables and helper functions for the run. Has all data from the `task_meta.sh` chain available. Available variables:
 
-| Variable             | Description                                |
-| -------------------- | ------------------------------------------ |
-| `$CONTAINERS`        | Path to the `containers/` directory        |
-| `$ASSETS`            | Path to the `assets/` directory            |
-| `$TASKS`             | Path to the `tasks/` directory             |
-| `$WORKLOAD_MANAGERS` | Path to the `workload_managers/` directory |
-| `$RUN_ID`            | Identifier of the current task run         |
+| Variable               | Description                                 |
+| ---------------------- | ------------------------------------------- |
+| `$ASSETS`              | Path to the `assets/` directory             |
+| `$TASKS`               | Path to the `tasks/` directory              |
+| `$WORKLOAD_MANAGERS`   | Path to the `workload_managers/` directory  |
+| `$CONTAINER_MANAGERS`  | Path to the `container_managers/` directory |
+| `$RUN_ID`              | Identifier of the current task run          |
 
 
 **`run_deps.sh`** -- Hierarchical (sourced root-to-leaf). Defines dependencies by writing `DEPENDENCIES` (array of dependency specs). Has the same data and variables available as `run_env.sh`. Each entry is a task path with an optional `:RUN_SPECS` suffix (same format as RUN_SPECS: comma-separated RUN_SPECs, `{a,b,c}` and `{start:end}` patterns, wildcards `*`/`?` outside braces):
@@ -125,7 +126,7 @@ Assets hold the actual implementation of experiments. Structure is flexible; the
 
 ## Containers
 
-Containers provide a fixed environment for running tasks and document how to build experiments. They are runtime-only: all task output is stored on the host. Use Apptainer `.def` files; build with `apptainer build <image>.sif containers/<name>.def`.
+Containers provide a fixed environment for running tasks and document how to build experiments. They are runtime-only: all task output is stored on the host. The framework is agnostic to the container runtime: a **container manager** script (default `container_managers/apptainer.sh`) provides verification and the exec snippet. Set `CONTAINER_MANAGER` in `task_meta.sh` to use a different backend.
 
 ## Workload Managers
 

@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-apptainer build gcc.sif "$CONTAINERS/gcc.def"
+apptainer build gcc.sif "$ASSETS/containers/gcc.def"

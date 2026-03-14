@@ -18,7 +18,7 @@ Options:
   --dry-run              Create manifest without running (no workload manager invoke)
   --clean                Remove output folders for specified tasks, do not run
   --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
-  --skip-verify-def      Skip verification that container .sif matches containers/*.def
+  --skip-verify-def      Skip verification that container image matches definition file
   --run-disabled         Run tasks even if TASK_DISABLED is set in task_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
   --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs

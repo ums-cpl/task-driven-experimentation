@@ -26,68 +26,68 @@ run_task() {
   # Resolve CONTAINER and CONTAINER_DEF from task_meta.sh chain with framework vars
   local container_path container_def container_gpu
   container_path=$(bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds_meta
     echo -n \"\${CONTAINER:-}\"
   " | xargs)
   container_def=$(bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds_meta
     echo -n \"\${CONTAINER_DEF:-}\"
   " | xargs)
   container_gpu=$(bash -c "
-    export CONTAINERS=\"$CONTAINERS\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     $source_cmds_meta
     echo -n \"\${CONTAINER_GPU:-}\"
   " | xargs)
+  local container_manager_rel
+  container_manager_rel=$(bash -c "
+    export ASSETS=\"$ASSETS\"
+    export TASKS=\"$TASKS\"
+    export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
+    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    $source_cmds_meta
+    echo -n \"\${CONTAINER_MANAGER:-container_managers/apptainer.sh}\"
+  " | xargs)
+  local container_manager_script="$container_manager_rel"
+  [[ "$container_manager_script" != /* ]] && container_manager_script="$REPOSITORY_ROOT/$container_manager_script"
 
   # Dry-run mode: no file changes, caller prints DRY RUN status
   if [[ "$DRY_RUN" == true ]]; then
     return 0
   fi
 
-  # Error if CONTAINER is set but .sif does not exist
+  # Error if CONTAINER is set but image does not exist
   if [[ -n "$container_path" ]]; then
     if [[ ! -f "$container_path" ]]; then
       echo "Error: Container image not found: $container_path" >&2
       if [[ -n "$container_def" ]]; then
-        echo "Build it with: apptainer build $container_path $container_def" >&2
+        echo "Build the image using the task's container definition and your chosen runtime." >&2
       fi
       return 1
     fi
 
-    # Verify container .sif was built from CONTAINER_DEF
+    # Verify container was built from CONTAINER_DEF via container manager
     if [[ "$SKIP_VERIFY_DEF" != true ]] && [[ -n "$container_def" ]]; then
       if [[ ! -f "$container_def" ]]; then
         echo "Error: Definition file not found: $container_def; cannot verify container. Use --skip-verify-def to run anyway." >&2
         return 1
       fi
-      normalize_def() { sed -e 's/^[bB]ootstrap:/Bootstrap:/' -e 's/^[fF]rom:/From:/'; }
-      diff_log="$run_folder/.container_verify_diff.log"
-      diff_out=$(mktemp)
-      if ! diff <(apptainer inspect --deffile "$container_path" | normalize_def) <(normalize_def < "$container_def") > "$diff_out" 2>&1; then
-        mkdir -p "$run_folder"
-        {
-          echo "Container definition verification failed."
-          echo "Comparing: embedded def in $container_path vs. $container_def"
-          echo "---"
-          cat "$diff_out"
-        } > "$diff_log"
-        rm -f "$diff_out"
-        echo "Error: Container $container_path was not built from $container_def (definitions differ). Rebuild with: apptainer build $container_path $container_def. Use --skip-verify-def to run anyway." >&2
-        echo "Diff written to $diff_log" >&2
+      mkdir -p "$run_folder"
+      local diff_log="$run_folder/.container_verify_diff.log"
+      source "$container_manager_script"
+      if ! container_verify "$container_path" "$container_def" "$diff_log"; then
         return 1
       fi
-      rm -f "$diff_out"
     fi
   fi
 
@@ -110,16 +110,23 @@ run_task() {
 "
   done
 
-  # Create runner script (self-contained for manual re-runs; invokes apptainer when CONTAINER set)
+  # Get container exec snippet from manager (for re-exec into container)
+  local container_exec_snippet_output=""
+  if [[ -f "$container_manager_script" ]]; then
+    container_exec_snippet_output=$(REPOSITORY_ROOT="$REPOSITORY_ROOT" source "$container_manager_script" 2>/dev/null && container_exec_snippet)
+  fi
+
+  # Create runner script (self-contained for manual re-runs; invokes container manager when CONTAINER set)
   mkdir -p "$run_folder"
   local runner_script="$run_folder/.run_script.sh"
   cat > "$runner_script" << RUNNER_SCRIPT
 #!/usr/bin/env bash
 set -euo pipefail
-export CONTAINERS="$CONTAINERS"
 export ASSETS="$ASSETS"
 export TASKS="$TASKS"
 export WORKLOAD_MANAGERS="$WORKLOAD_MANAGERS"
+export CONTAINER_MANAGERS="$CONTAINER_MANAGERS"
+export CONTAINER_MANAGER="$container_manager_rel"
 export REPOSITORY_ROOT="$REPOSITORY_ROOT"
 export RUN_FOLDER="$run_folder"
 
@@ -129,12 +136,7 @@ find "\$RUN_FOLDER" -mindepth 1 -maxdepth 1 ! -name '.run_script.sh' -exec rm -r
 # Source task_meta.sh chain (static task configuration)
 $source_cmds_meta
 
-# If CONTAINER set and not already inside container, re-exec inside apptainer
-if [[ -z "\${CONTAINER_INNER:-}" ]] && [[ -n "\${CONTAINER:-}" ]]; then
-  gpu_flag=""
-  [[ -n "\${CONTAINER_GPU:-}" ]] && gpu_flag="--nv "
-  exec apptainer exec \${CONTAINER_FLAGS:-} \$gpu_flag -B "$REPOSITORY_ROOT:$REPOSITORY_ROOT" "\$CONTAINER" env CONTAINER_INNER=1 bash "\$(cd "\$(dirname "\$0")" && pwd)/.run_script.sh"
-fi
+$container_exec_snippet_output
 
 # Export RUN_ID and source run_env.sh chain (runtime helpers)
 export RUN_ID="$run_name"
@@ -161,6 +163,7 @@ $overrides_meta  echo ""
   echo "CONTAINER_DEF=\${CONTAINER_DEF:-}"
   echo "CONTAINER_GPU=\${CONTAINER_GPU:-}"
   echo "CONTAINER_FLAGS=\${CONTAINER_FLAGS:-}"
+  echo "CONTAINER_MANAGER=\${CONTAINER_MANAGER:-}"
   echo "RUN_SPECS=\${RUN_SPECS:-}"
   echo "WORKLOAD_MANAGER=\${WORKLOAD_MANAGER:-}"
   echo "TASK_DISABLED=\${TASK_DISABLED:-}"
