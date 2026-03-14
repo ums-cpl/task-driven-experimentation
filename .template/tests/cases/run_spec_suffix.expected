@@ -30,4 +30,4 @@ STAGE	3
 JOB_NAME	run_tasks
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	2
-0	assets-run1	tasks/experiment/MatMul/IS1/baseline	RUN_SPECS=assets-run1
+0	assets-run1	tasks/experiment/MatMul/IS1/baseline	TASK_RUNS=assets-run1

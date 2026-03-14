@@ -6,58 +6,35 @@ run_task() {
   local run_name="$2"
   local run_folder="$task_dir/$run_name"
 
-  # Collect task_meta.sh and run_env.sh files (root-to-leaf)
+  # Collect task_meta.sh, run_meta.sh and run_env.sh files (root-to-leaf)
   local f
-  local meta_files=() run_env_files=()
+  local meta_files=() run_meta_files=() run_env_files=()
   while IFS= read -r f; do
     [[ -n "$f" ]] && meta_files+=("$f")
   done < <(get_task_meta_files "$task_dir")
   while IFS= read -r f; do
+    [[ -n "$f" ]] && run_meta_files+=("$f")
+  done < <(get_run_meta_files "$task_dir")
+  while IFS= read -r f; do
     [[ -n "$f" ]] && run_env_files+=("$f")
   done < <(get_run_env_files "$task_dir")
 
-  # Build source commands with overrides interleaved (task_meta.sh and run_env.sh chains)
+  # Build source commands with overrides interleaved
   local source_cmds_meta
   source_cmds_meta=$(build_source_cmds_with_overrides meta_files)
-
+  local source_cmds_run_meta
+  source_cmds_run_meta=$(build_source_cmds_with_overrides run_meta_files)
   local source_cmds_run_env
   source_cmds_run_env=$(build_source_cmds_with_overrides run_env_files)
 
-  # Resolve CONTAINER and CONTAINER_DEF from task_meta.sh chain with framework vars
-  local container_path container_def container_gpu
-  container_path=$(bash -c "
-    export ASSETS=\"$ASSETS\"
-    export TASKS=\"$TASKS\"
-    export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
-    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
-    $source_cmds_meta
-    echo -n \"\${CONTAINER:-}\"
-  " | xargs)
-  container_def=$(bash -c "
-    export ASSETS=\"$ASSETS\"
-    export TASKS=\"$TASKS\"
-    export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
-    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
-    $source_cmds_meta
-    echo -n \"\${CONTAINER_DEF:-}\"
-  " | xargs)
-  container_gpu=$(bash -c "
-    export ASSETS=\"$ASSETS\"
-    export TASKS=\"$TASKS\"
-    export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
-    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
-    $source_cmds_meta
-    echo -n \"\${CONTAINER_GPU:-}\"
-  " | xargs)
-  local container_manager_rel
-  container_manager_rel=$(bash -c "
-    export ASSETS=\"$ASSETS\"
-    export TASKS=\"$TASKS\"
-    export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
-    export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
-    $source_cmds_meta
-    echo -n \"\${CONTAINER_MANAGER:-container_managers/apptainer.sh}\"
-  " | xargs)
+  # Resolve container and manager from run_meta.sh chain (with RUN_ID)
+  local container_path container_def container_gpu container_flags container_manager_rel
+  container_path=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER" | xargs)
+  container_def=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_DEF" | xargs)
+  container_gpu=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_GPU" | xargs)
+  container_flags=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_FLAGS" | xargs)
+  container_manager_rel=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_MANAGER" | xargs)
+  [[ -z "$container_manager_rel" ]] && container_manager_rel="container_managers/apptainer.sh"
   local container_manager_script="$container_manager_rel"
   [[ "$container_manager_script" != /* ]] && container_manager_script="$REPOSITORY_ROOT/$container_manager_script"
 
@@ -66,17 +43,17 @@ run_task() {
     return 0
   fi
 
-  # Error if CONTAINER is set but image does not exist
+  # Error if RUN_CONTAINER is set but image does not exist
   if [[ -n "$container_path" ]]; then
     if [[ ! -f "$container_path" ]]; then
       echo "Error: Container image not found: $container_path" >&2
       if [[ -n "$container_def" ]]; then
-        echo "Build the image using the task's container definition and your chosen runtime." >&2
+        echo "Build the image using the run's container definition and your chosen runtime." >&2
       fi
       return 1
     fi
 
-    # Verify container was built from CONTAINER_DEF via container manager
+    # Verify container was built from RUN_CONTAINER_DEF via container manager
     if [[ "$SKIP_VERIFY_DEF" != true ]] && [[ -n "$container_def" ]]; then
       if [[ ! -f "$container_def" ]]; then
         echo "Error: Definition file not found: $container_def; cannot verify container. Use --skip-verify-def to run anyway." >&2
@@ -91,7 +68,7 @@ run_task() {
     fi
   fi
 
-  # For metadata: was container verified? (only relevant when CONTAINER is set)
+  # For metadata: was container verified? (only relevant when RUN_CONTAINER is set)
   container_verified="n/a"
   if [[ -n "$container_path" ]]; then
     if [[ "$SKIP_VERIFY_DEF" == true ]] || [[ -z "$container_def" ]]; then
@@ -116,7 +93,7 @@ run_task() {
     container_exec_snippet_output=$(REPOSITORY_ROOT="$REPOSITORY_ROOT" source "$container_manager_script" 2>/dev/null && container_exec_snippet)
   fi
 
-  # Create runner script (self-contained for manual re-runs; invokes container manager when CONTAINER set)
+  # Create runner script (self-contained for manual re-runs; invokes container manager when RUN_CONTAINER set)
   mkdir -p "$run_folder"
   local runner_script="$run_folder/.run_script.sh"
   cat > "$runner_script" << RUNNER_SCRIPT
@@ -133,13 +110,21 @@ export RUN_FOLDER="$run_folder"
 # Remove all files in run folder except this script
 find "\$RUN_FOLDER" -mindepth 1 -maxdepth 1 ! -name '.run_script.sh' -exec rm -rf {} +
 
-# Source task_meta.sh chain (static task configuration)
+# Source task_meta.sh chain (task configuration, e.g. TASK_RUNS)
 $source_cmds_meta
+
+# Source run_meta.sh chain and export RUN_* as CONTAINER* for container manager scripts
+export RUN_ID="$run_name"
+$source_cmds_run_meta
+export CONTAINER="\${RUN_CONTAINER:-}"
+export CONTAINER_DEF="\${RUN_CONTAINER_DEF:-}"
+export CONTAINER_GPU="\${RUN_CONTAINER_GPU:-}"
+export CONTAINER_FLAGS="\${RUN_CONTAINER_FLAGS:-}"
+export CONTAINER_MANAGER="\${RUN_CONTAINER_MANAGER:-$container_manager_rel}"
 
 $container_exec_snippet_output
 
-# Export RUN_ID and source run_env.sh chain (runtime helpers)
-export RUN_ID="$run_name"
+# Source run_env.sh chain (runtime helpers)
 $source_cmds_run_env
 
 exec > >(tee "\$RUN_FOLDER/.run_output.log") 2>&1
@@ -158,15 +143,14 @@ cd "\$RUN_FOLDER"
 $overrides_meta  echo ""
 
   echo "=== framework variables ==="
-  # Task (task_meta.sh) and task run (RUN_ID) writable variables read by framework; see template-reference.md
-  echo "CONTAINER=\${CONTAINER:-}"
-  echo "CONTAINER_DEF=\${CONTAINER_DEF:-}"
-  echo "CONTAINER_GPU=\${CONTAINER_GPU:-}"
-  echo "CONTAINER_FLAGS=\${CONTAINER_FLAGS:-}"
-  echo "CONTAINER_MANAGER=\${CONTAINER_MANAGER:-}"
-  echo "RUN_SPECS=\${RUN_SPECS:-}"
-  echo "WORKLOAD_MANAGER=\${WORKLOAD_MANAGER:-}"
-  echo "TASK_DISABLED=\${TASK_DISABLED:-}"
+  echo "RUN_DISABLED=\${RUN_DISABLED:-}"
+  echo "RUN_CONTAINER=\${RUN_CONTAINER:-}"
+  echo "RUN_CONTAINER_DEF=\${RUN_CONTAINER_DEF:-}"
+  echo "RUN_CONTAINER_GPU=\${RUN_CONTAINER_GPU:-}"
+  echo "RUN_CONTAINER_FLAGS=\${RUN_CONTAINER_FLAGS:-}"
+  echo "RUN_CONTAINER_MANAGER=\${RUN_CONTAINER_MANAGER:-}"
+  echo "RUN_WORKLOAD_MANAGER=\${RUN_WORKLOAD_MANAGER:-}"
+  echo "RUN_JOB_NAME=\${RUN_JOB_NAME:-}"
   echo "RUN_ID=\${RUN_ID:-}"
   echo ""
 
@@ -215,7 +199,7 @@ fi
 RUNNER_SCRIPT
   chmod u+x "$runner_script"
 
-  # Run task: runner script tees to .run_output.log; suppress console when invoked from run_tasks.sh
+  # Execute run: runner script tees to .run_output.log; suppress console when invoked from run_tasks.sh
   bash "$runner_script" > /dev/null 2>&1
   return $?
 }
@@ -294,7 +278,7 @@ create_manifest() {
     )
   done
 
-  # Only assign job_id to blocks that have at least one task to emit (SKIP_SUCCEEDED filter)
+  # Only assign job_id to blocks that have at least one run to emit (SKIP_SUCCEEDED filter)
   local -a emitted_keys=()
   local idx pair
   for key in "${ordered_keys[@]}"; do
@@ -302,7 +286,7 @@ create_manifest() {
     read -ra indices <<< "${group_pairs[$key]:-}"
     local has_any=false
     for idx in "${indices[@]}"; do
-      [[ "$SKIP_SUCCEEDED" != true ]] || ! is_task_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && { has_any=true; break; }
+      [[ "$SKIP_SUCCEEDED" != true ]] || ! is_task_run_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && { has_any=true; break; }
     done
     [[ "$has_any" == true ]] && emitted_keys+=("$key")
   done
@@ -362,7 +346,7 @@ create_manifest() {
       read -ra indices <<< "${group_pairs[$key]:-}"
       local -a to_emit=()
       for idx in "${indices[@]}"; do
-        [[ "$SKIP_SUCCEEDED" == true ]] && is_task_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && continue
+        [[ "$SKIP_SUCCEEDED" == true ]] && is_task_run_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && continue
         to_emit+=("$idx")
       done
       [[ ${#to_emit[@]} -eq 0 ]] && continue
@@ -418,7 +402,7 @@ run_array_task() {
   local task_id="$3"
   local line task_dir
 
-  # Parse header: SKIP_VERIFY_DEF only until --- (per-task overrides are in task lines)
+  # Parse header: SKIP_VERIFY_DEF only until --- (per-run overrides are in run lines)
   while IFS= read -r line; do
     [[ "$line" == "---" ]] && break
     if [[ "$line" == SKIP_VERIFY_DEF=* ]]; then
@@ -433,7 +417,7 @@ run_array_task() {
     /^[0-9]+\t/ && cur==jid && $1==tid { print; exit }
   ' "$manifest")
   if [[ -z "$manifest_line" ]]; then
-    echo "Error: No task found for job $job_id index $task_id in manifest $manifest" >&2
+    echo "Error: No run found for job $job_id index $task_id in manifest $manifest" >&2
     return 1
   fi
   ENV_OVERRIDES=()

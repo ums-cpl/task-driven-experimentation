@@ -8,7 +8,7 @@ This document describes recommended practices for repositories based on this tem
 
 ### Main steps are executable with one command
 
-> The main steps (the sequence of tasks that reach the repository's primary goal) should be runnable with a single invocation of `run_tasks.sh`. All other tasks -- temporary experiments, abandoned directions, or optional variants -- should be disabled by default via `TASK_DISABLED=true` in `task_meta.sh`.
+> The main steps (the sequence of task runs that reach the repository's primary goal) should be runnable with a single invocation of `run_tasks.sh`. All other tasks -- temporary experiments, abandoned directions, or optional variants -- should be disabled by default via `RUN_DISABLED=true` in `run_meta.sh`.
 
 **Examples:**
 
@@ -48,7 +48,7 @@ This document describes recommended practices for repositories based on this tem
 
 ### Document broken, abandoned, or superseded steps
 
-> Document steps (or tasks) that are broken, abandoned, or superseded using the same template as for enabled steps, with two differences: add "(DISABLED)" after the step name, and use the first entry (Purpose) to state the reason why the step is disabled (e.g., that it no longer builds, was discontinued, or was replaced by a better approach). Use `TASK_DISABLED=true` to exclude such steps from normal runs. Keep disabled steps in the repository (and therefore in the documentation) only if they serve a purpose -- for example, to preserve historical context or to allow running them with `--run-disabled` when needed.
+> Document steps (or tasks) that are broken, abandoned, or superseded using the same template as for enabled steps, with two differences: add "(DISABLED)" after the step name, and use the first entry (Purpose) to state the reason why the step is disabled (e.g., that it no longer builds, was discontinued, or was replaced by a better approach). Use `RUN_DISABLED=true` in `run_meta.sh` to exclude such runs from normal invocations. Keep disabled steps in the repository (and therefore in the documentation) only if they serve a purpose -- for example, to preserve historical context or to allow running them with `--run-disabled` when needed.
 
 **Example template for documenting a disabled step of the workflow (copy and fill in):**
 
@@ -90,16 +90,16 @@ This document describes recommended practices for repositories based on this tem
 
 **Example:**
 
-- `run_deps.sh` exports `DEPENDENCIES+=("tasks/build/data:$BUILD_FOLDER" "tasks/experiment/MatMul/IS1/data:$BUILD_FOLDER")`, ensuring the runner verifies these tasks have succeeded before running the current task.
+- `run_deps.sh` exports `RUN_DEPENDENCIES+=("tasks/build/data:$BUILD_FOLDER" "tasks/experiment/MatMul/IS1/data:$BUILD_FOLDER")`, ensuring the runner verifies these runs have succeeded before running the current run.
 
 ### Structure tasks hierarchically and reuse code
 
-> Organize tasks in a logical hierarchy and reuse shared logic via `run_env.sh`. Use `task_meta.sh` for static configuration and `run_env.sh` for environment setup and helper functions.
+> Organize tasks in a logical hierarchy and reuse shared logic via `run_env.sh`. Use `task_meta.sh` for TASK_RUNS (which runs exist) and `run_meta.sh` for run-level configuration (container, workload manager, RUN_DISABLED). Use `run_env.sh` for environment setup and helper functions.
 
 **Examples:**
 
 - A hierarchy `tasks/experiment/<routine>/<input_size>/<variant>/` groups related tasks; `run_env.sh` at the routine level defines `create_data()` and `run_experiment()` so leaf `run.sh` files reduce to a single function call.
-- Shared variables (`ROUTINE`, `INPUT_SIZE`, `COMPETITOR`) in `task_meta.sh` propagate through the tree and are used in `run_deps.sh` and `run_env.sh`.
+- Set `TASK_RUNS` in `task_meta.sh`; set `RUN_CONTAINER`, `RUN_WORKLOAD_MANAGER`, and shared variables in `run_meta.sh` so they propagate and are used in `run_deps.sh` and `run_env.sh`.
 
 ---
 

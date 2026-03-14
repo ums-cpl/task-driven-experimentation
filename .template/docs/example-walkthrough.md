@@ -4,7 +4,7 @@
 
 This example demonstrates an end-to-end workflow: build, experiment, and plot. The output plot is written to `tasks/plot/assets`. Requires an [Apptainer](https://apptainer.org/) installation.
 
-**What the template provides.** The template provides `run_tasks.sh` and requires work to be divided into `assets/` and `tasks/` that run inside containers. Container definition files live under `assets/containers/`. The framework handles task resolution, dependencies, and execution via a pluggable container manager (default: Apptainer).
+**What the template provides.** The template provides `run_tasks.sh` and requires work to be divided into `assets/` and `tasks/` that run inside containers. The framework handles task resolution, dependencies, and execution via a pluggable container manager (default: Apptainer).
 
 **What is specific to this example.** How assets and tasks are structured is completely chosen by the example. It shows one best practice: a hierarchical task tree with shared configuration, containerized builds and runs, and executables that accept paths as arguments. With good reason, other structures may be more sensible for different use cases.
 
@@ -17,7 +17,7 @@ The example populates the top-level directories: `assets/` (including container 
 |-- run_tasks.sh                 # Main entry point for running tasks
 |
 |-- assets/                      # Implementation: data generation, experiments, plotting
-|   |-- containers/              # Container definition files (referenced via $ASSETS/containers/)
+|   |-- containers/              # Container definition files
 |   |   |-- gcc.def              # Build container (compile C++)
 |   |   |-- plot.def             # Plot container (run Python)
 |   |-- data/
@@ -69,7 +69,7 @@ Assets are organized by purpose: data generation, experiment variants, and plott
 
 ## Containers
 
-The example uses two container definitions: one for compilation and one for plotting. Definition files live under `assets/containers/` (e.g. `gcc.def`, `plot.def`). Build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) call `apptainer build` directly in their `run.sh` to produce `.sif` images. Other tasks set `CONTAINER` and `CONTAINER_DEF` (e.g. `$ASSETS/containers/gcc.def`) in `task_meta.sh`; the framework uses the container manager (default `container_managers/apptainer.sh`) to verify and run inside the container. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
+The example uses two container definitions: one for compilation and one for plotting. Definition files live under `assets/containers/` (e.g. `gcc.def`, `plot.def`). Build tasks (`tasks/build/containers/gcc/` and `tasks/build/containers/plot/`) call `apptainer build` in their `run.sh` to produce `.sif` images. Other tasks set `CONTAINER` and `CONTAINER_DEF` (e.g. `$ASSETS/containers/gcc.def`) in `task_meta.sh`; the framework uses the container manager (default `container_managers/apptainer.sh`) to verify and run inside the container. The template also supports `CONTAINER_GPU` for GPU tasks, though this CPU-only example does not use it.
 
 ## Task Hierarchy
 
@@ -111,7 +111,7 @@ The file `tasks/experiment/MatMul/run_env.sh` defines helper functions `create_d
 
 ## Dependencies
 
-`run_deps.sh` files are hierarchical: they are sourced root-to-leaf and append to `DEPENDENCIES` via `+=`. Build tasks depend on their container build. Data tasks depend on the container and the compiled data binary. Experiment tasks depend on the container, the compiled variant binary, and the generated data for their input size. The plot task depends on the plot container and all experiment runs, using the glob-style spec `:*-run*` to match any run of any device. Dependency paths use variables (`$COMPETITOR`, `$ROUTINE`, `$INPUT_SIZE`, `$BUILD_FOLDER`) so they stay generic across the hierarchy.
+`run_deps.sh` files are hierarchical: they are sourced root-to-leaf and append to `RUN_DEPENDENCIES` via `+=`. Build tasks depend on their container build. Data tasks depend on the container and the compiled data binary. Experiment tasks depend on the container, the compiled variant binary, and the generated data for their input size. The plot task depends on the plot container and all experiment runs, using the glob-style spec `:*-run*` to match any run of any device. Dependency paths use variables (`$COMPETITOR`, `$ROUTINE`, `$INPUT_SIZE`, `$BUILD_FOLDER`) so they stay generic across the hierarchy.
 
 ## RUN_SPECS patterns
 

@@ -86,7 +86,7 @@ wm_resolve_depends() {
   done
 }
 
-# Print the single task line for job_id and task_index from manifest (INDEX\tRUN_NAME\tPATH [\tKEY=VALUE...]).
+# Print the single run line for job_id and task_index from manifest (INDEX\tRUN_NAME\tPATH [\tKEY=VALUE...]).
 # Outputs nothing if not found.
 wm_get_manifest_task_line() {
   local manifest="$1"
@@ -160,6 +160,6 @@ wm_slurm_submit_stage() {
     slurm_id=$(sbatch --parsable "$tmp")
     rm -f "$tmp"
     echo "$jid	$slurm_id" >> "$log_dir/wm_job_ids"
-    echo "Submitted job $jid (SLURM $slurm_id) with ${WM_JOB_TASK_COUNT["$jid"]} task(s)"
+    echo "Submitted job $jid (SLURM $slurm_id) with ${WM_JOB_TASK_COUNT["$jid"]} run(s)"
   done
 }

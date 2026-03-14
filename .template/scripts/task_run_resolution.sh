@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Task resolution and building task-run pairs.
+# Task-run resolution and building task-run pairs.
 
 # True if dir is a run folder (has framework marker files). Used to exclude run output from task resolution.
 is_run_folder() {
@@ -151,14 +151,6 @@ build_task_run_pairs() {
         exit 1
       fi
 
-      if [[ "$FORCE_DISABLED" != true ]]; then
-        local task_disabled
-        task_disabled=$(resolve_task_var "$task_dir" "TASK_DISABLED" | tr '[:upper:]' '[:lower:]')
-        case "$task_disabled" in
-          true|1|yes) continue ;;
-        esac
-      fi
-
       if [[ -z "${task_runs[$task_dir]+x}" ]]; then
         tasks_ordered+=("$task_dir")
       fi
@@ -181,7 +173,7 @@ build_task_run_pairs() {
           runs=("${sorted[@]}")
         else
           local resolved_run_spec
-          resolved_run_spec=$(resolve_task_var "$task_dir" "RUN_SPECS")
+          resolved_run_spec=$(resolve_task_var "$task_dir" "TASK_RUNS")
           if [[ -z "$resolved_run_spec" ]]; then
             resolved_run_spec="assets"
           fi
@@ -203,10 +195,10 @@ build_task_run_pairs() {
     done < <(resolve_arg "$task_path" "$REPOSITORY_ROOT")
 
     # Emit pairs for this spec in run-first, task-second order
-    # Only add RUN_SPECS to overrides when explicitly from CLI: user-used suffix (spec_idx < ORIGINAL_TASK_SPEC_COUNT). Do not add for specs added by --include-deps or when RUN_SPECS comes from task_meta/default.
+    # Only add TASK_RUNS to overrides when explicitly from CLI: user-used suffix (spec_idx < ORIGINAL_TASK_SPEC_COUNT). Do not add for specs added by --include-deps or when TASK_RUNS comes from task_meta/default.
     local effective_ov_tsv="$override_tsv"
     if [[ -n "$run_spec" ]] && [[ "$spec_idx" -lt "${ORIGINAL_TASK_SPEC_COUNT:-0}" ]]; then
-      effective_ov_tsv="${effective_ov_tsv:+${effective_ov_tsv}$'\t'}RUN_SPECS=$run_spec"
+      effective_ov_tsv="${effective_ov_tsv:+${effective_ov_tsv}$'\t'}TASK_RUNS=$run_spec"
     fi
     local max_runs=0
     local t
@@ -221,7 +213,17 @@ build_task_run_pairs() {
         local -a truns=()
         read -ra truns <<< "${task_runs[$t]:-}"
         if [[ $run_idx -lt ${#truns[@]} ]]; then
-          pairs_with_override+=("$t	${truns[$run_idx]}	$effective_ov_tsv")
+          local run_name="${truns[$run_idx]}"
+          if [[ "$FORCE_DISABLED" != true ]]; then
+            ENV_OVERRIDES=()
+            [[ -n "$effective_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$effective_ov_tsv"
+            local run_disabled
+            run_disabled=$(resolve_run_var "$t" "$run_name" "RUN_DISABLED" | tr '[:upper:]' '[:lower:]')
+            case "$run_disabled" in
+              true|1|yes) continue ;;
+            esac
+          fi
+          pairs_with_override+=("$t	$run_name	$effective_ov_tsv")
         fi
       done
     done
@@ -258,17 +260,17 @@ build_task_run_pairs() {
     TASK_RUN_PAIR_OVERRIDES+=("$pair_ov_tsv")
     TASK_RUN_PAIR_OCC_KEYS+=("$occ_key")
 
-    # Resolve WORKLOAD_MANAGER and JOB_NAME per pair (with this pair's overrides)
+    # Resolve RUN_WORKLOAD_MANAGER and RUN_JOB_NAME per pair from run_meta (with this pair's overrides)
     ENV_OVERRIDES=()
     [[ -n "$pair_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$pair_ov_tsv"
     local wm job_name
-    wm=$(resolve_task_var "$task_dir" "WORKLOAD_MANAGER")
+    wm=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_MANAGER")
     [[ -z "$wm" ]] && wm="workload_managers/direct.sh"
-    job_name=$(resolve_task_var "$task_dir" "JOB_NAME")
-    # Default to run_tasks only when JOB_NAME is unset (neither in overrides nor task_meta.sh)
+    job_name=$(resolve_run_var "$task_dir" "$run_name" "RUN_JOB_NAME")
+    # Default to run_tasks only when RUN_JOB_NAME is unset (neither in overrides nor run_meta.sh)
     if [[ -z "$job_name" ]]; then
       local is_set
-      is_set=$(resolve_task_var_isset "$task_dir" "JOB_NAME")
+      is_set=$(resolve_run_var_isset "$task_dir" "$run_name" "RUN_JOB_NAME")
       if [[ "$is_set" == "1" ]]; then
         job_name=""   # explicitly set to empty
       else

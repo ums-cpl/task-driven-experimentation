@@ -1,24 +1,17 @@
 #!/usr/bin/env bash
 # Run spec expansion and task status.
 #
-# RUN_SPECS format (same for execute, clean, and dependency specs): comma-separated
-# list of RUN_SPEC items. Splitting respects braces: only commas outside {...} split.
-# Each RUN_SPEC is a literal with zero or more expansion patterns:
+# TASK_RUNS format (same for execute, clean, and dependency specs): comma-separated
+# list of run spec items. Splitting respects braces: only commas outside {...} split.
+# Each item is a literal with zero or more expansion patterns:
 #   {a,b,c}       -> list (comma-separated, trim spaces)
 #   {start:end}   -> integer range (inclusive). If start > end, no values.
-# Multiple patterns in one RUN_SPEC expand to the cartesian product (inverse order
+# Multiple patterns in one item expand to the cartesian product (inverse order
 # of occurrence: first pattern varies slowest, last fastest).
 # For clean mode and dependency specs, wildcards * and ? outside {...} are also
 # supported and match existing run folders or run names.
 
-# Check if a task run has already succeeded (has .run_success file).
-is_task_succeeded() {
-  local task_dir="$1"
-  local run_name="$2"
-  [[ -f "$task_dir/$run_name/.run_success" ]]
-}
-
-# Split RUN_SPECS string into RUN_SPEC tokens (comma at depth 0 only). Skip empty. Append to _out.
+# Split TASK_RUNS string into tokens (comma at depth 0 only). Skip empty. Append to _out.
 _split_run_specs() {
   local spec="$1"
   local -n _out=$2
@@ -157,7 +150,7 @@ _expand_one_run_spec() {
   done
 }
 
-# Expand RUN_SPECS to array of run names. RUN_SPECS is comma-separated (split at depth 0).
+# Expand TASK_RUNS to array of run names. TASK_RUNS is comma-separated (split at depth 0).
 # Each RUN_SPEC can contain {a,b,c} and {start:end}; multiple patterns -> cartesian product.
 expand_run_spec() {
   local spec="$1"
@@ -188,7 +181,7 @@ _has_wildcard_outside_braces() {
   return 1
 }
 
-# For clean mode: same RUN_SPECS format; if * or ? outside {...}, match existing run folders.
+# For clean mode: same TASK_RUNS format; if * or ? outside {...}, match existing run folders.
 expand_run_spec_for_clean() {
   local task_dir="$1"
   local spec="$2"

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # Status printing for task runs. print_task_run_status reads RUN_STATUS_ROWS and optional manifest for mtime.
 
+# True if the task run has already succeeded (has .run_success marker).
+is_task_run_succeeded() {
+  local task_dir="$1"
+  local run_name="$2"
+  [[ -f "$task_dir/$run_name/.run_success" ]]
+}
+
 # Print status table for rows in RUN_STATUS_ROWS (each element: "display_id\trun\trelative_path").
 # Optional first arg: manifest file path for mtime comparison (only show SUCCESS/FAILED/RUNNING if marker is not older than manifest).
 # Requires REPOSITORY_ROOT.

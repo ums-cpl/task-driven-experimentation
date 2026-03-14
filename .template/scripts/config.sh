@@ -25,7 +25,7 @@ STATUS_MODE=false
 STATUS_MANIFEST=""
 declare -a RUN_STATUS_ROWS=()
 declare -a ENV_OVERRIDES=()
-# Number of task specs from CLI before --include-deps added any. Used so RUN_SPECS is only in manifest when explicitly set by user (suffix or KEY=VALUE).
+# Number of task specs from CLI before --include-deps added any. Used so TASK_RUNS is only in manifest when explicitly set by user (suffix or KEY=VALUE).
 ORIGINAL_TASK_SPEC_COUNT=0
 
 RUN_TASKS_OUTPUT_ROOT="$REPOSITORY_ROOT/workload_logs"

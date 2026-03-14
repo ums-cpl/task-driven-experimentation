@@ -10,27 +10,27 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
   - Parent directory: recursively finds all descendant dirs with run.sh
   - Wildcard: expands to matching dirs (e.g. tasks/.../*). Use !(pattern) to exclude (e.g. tasks/.../*/!(data))
 
-  Optional suffix :RUN_SPECS sets run(s). Examples: :local, :run-{1:10}, :run* (clean only, wildcard).
-  Without suffix: default RUN_SPECS "assets" for execute; cleans all runs with --clean.
-  Quote the task spec if RUN_SPECS contains * or ? (e.g. "tasks/task1:run*").
+  Optional suffix :TASK_RUNS sets run(s). Examples: :local, :run-{1:10}, :run* (clean only, wildcard).
+  Without suffix: default TASK_RUNS "assets" for execute; cleans all runs with --clean.
+  Quote the task spec if TASK_RUNS contains * or ? (e.g. "tasks/task1:run*").
 
 Options:
   --dry-run              Create manifest without running (no workload manager invoke)
   --clean                Remove output folders for specified tasks, do not run
   --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
   --skip-verify-def      Skip verification that container image matches definition file
-  --run-disabled         Run tasks even if TASK_DISABLED is set in task_meta.sh
+  --run-disabled         Run runs even if RUN_DISABLED is set in run_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
   --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE Show exit states for all task runs listed in FILE (manifest from a prior run)
   -h, --help             Show this help
 
-Environment overrides (KEY=VALUE) are applied after each sourced file (task_meta.sh, run_env.sh, run_deps.sh), pinning overridden values so every subsequent file sees them.
+Environment overrides (KEY=VALUE) are applied after each sourced file (task_meta.sh, run_meta.sh, run_env.sh, run_deps.sh), pinning overridden values so every subsequent file sees them.
 EOF
 }
 
 # Parse TASK arg into task_path and run_spec. Split on first ':'.
-# Used for both CLI TASK specs and DEPENDENCIES in run_deps.sh.
+# Used for both CLI TASK specs and RUN_DEPENDENCIES in run_deps.sh.
 # Examples: "tasks/build/data:gcc" -> path="tasks/build/data", run_spec="gcc";
 #           "tasks/build/data:run-{1:10}" -> path="tasks/build/data", run_spec="run-{1:10}" (range).
 # Edge cases: Windows paths like C:\path break (first colon separates drive). Assumes Unix-style paths.

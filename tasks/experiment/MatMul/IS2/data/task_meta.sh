@@ -1,3 +1,1 @@
-export CONTAINER=$TASKS/build/containers/gcc/$BUILD_FOLDER/gcc.sif
-export CONTAINER_DEF=$ASSETS/containers/gcc.def
-export RUN_SPECS=$BUILD_FOLDER
+export TASK_RUNS=$BUILD_FOLDER

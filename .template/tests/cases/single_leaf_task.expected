@@ -1,4 +1,4 @@
-# Single leaf task: resolution and default RUN_SPECS
+# Single leaf task: resolution and default TASK_RUNS
 --dry-run tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false

@@ -1,5 +1,5 @@
-# JOB_NAME env override appears in JOB block and on task line
---dry-run JOB_NAME=test tasks/build/containers/gcc
+# RUN_JOB_NAME env override appears in JOB block and on task line
+--dry-run RUN_JOB_NAME=test tasks/build/containers/gcc
 EXPECT_SUCCESS:
 SKIP_VERIFY_DEF=false
 ---
@@ -8,4 +8,4 @@ STAGE	0
 JOB_NAME	test
 WORKLOAD_MANAGER	workload_managers/direct.sh
 DEPENDS	
-0	assets	tasks/build/containers/gcc	JOB_NAME=test
+0	assets	tasks/build/containers/gcc	RUN_JOB_NAME=test
