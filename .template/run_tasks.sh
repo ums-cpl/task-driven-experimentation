@@ -7,13 +7,13 @@ set -euo pipefail
 # Abort whole run on CTRL+C (SIGINT)
 trap 'echo ""; echo "Interrupted. Aborting run." >&2; exit 130' INT
 
-REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEMPLATE="$REPOSITORY_ROOT/.template"
+TEMPLATE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPOSITORY_ROOT="${REPOSITORY_ROOT:-$(cd "$(dirname "$TEMPLATE")" && pwd)}"
 TASKS="$REPOSITORY_ROOT/tasks"
 ASSETS="$REPOSITORY_ROOT/assets"
 WORKLOAD_MANAGERS="$TEMPLATE/workload_managers"
 CONTAINER_MANAGERS="$TEMPLATE/container_managers"
-RUN_TASKS_LIB="$REPOSITORY_ROOT/.template/scripts"
+RUN_TASKS_LIB="$TEMPLATE/scripts"
 
 source "$RUN_TASKS_LIB/config.sh"
 source "$RUN_TASKS_LIB/args.sh"
