@@ -1,0 +1,15 @@
+# Brace range expansion
+RUN: --dry-run "tasks/simple:run-{1:3}"
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	run-1	tasks/simple	TASK_RUNS=run-{1:3}
+1	run-2	tasks/simple	TASK_RUNS=run-{1:3}
+2	run-3	tasks/simple	TASK_RUNS=run-{1:3}
+END_STDOUT

@@ -1,0 +1,13 @@
+# Manifest header has SKIP_VERIFY_DEF and separator
+RUN: --dry-run tasks/a
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/a
+END_STDOUT

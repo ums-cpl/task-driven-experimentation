@@ -1,0 +1,3 @@
+# -h flag exits 0
+RUN: -h
+EXIT: 0

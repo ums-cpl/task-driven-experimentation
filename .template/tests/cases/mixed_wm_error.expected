@@ -1,4 +1,0 @@
-# Mixing direct.sh (default) with a cluster WM is not allowed
---dry-run tasks/build/containers/gcc RUN_WORKLOAD_MANAGER=.template/workload_managers/palmaII-gpu4090.sh tasks/build/containers/plot
-EXPECT_FAILURE:
-Error: Mixing .template/workload_managers/direct.sh with other workload managers is not supported. Use either only direct.sh or only other workload managers.

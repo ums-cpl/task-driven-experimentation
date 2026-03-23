@@ -1,0 +1,3 @@
+# --help flag exits 0
+RUN: --help
+EXIT: 0

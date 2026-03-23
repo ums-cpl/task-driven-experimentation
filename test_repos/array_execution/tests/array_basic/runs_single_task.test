@@ -1,0 +1,4 @@
+# Array execution runs single task from manifest
+RUN: --array-manifest=$ASSETS/manifest --array-job-id=0 --array-task-id=0
+EXIT: 0
+FILE_EXISTS: $TASKS/arr_task/assets/.run_success

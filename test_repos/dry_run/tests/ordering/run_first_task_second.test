@@ -1,0 +1,14 @@
+# Multiple runs for a single task
+RUN: --dry-run "tasks/a:{r1,r2}"
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	r1	tasks/a	TASK_RUNS={r1,r2}
+1	r2	tasks/a	TASK_RUNS={r1,r2}
+END_STDOUT

@@ -1,0 +1,13 @@
+# Deeply nested task is resolved correctly
+RUN: --dry-run tasks/deep
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/deep/a/b/c/d
+END_STDOUT

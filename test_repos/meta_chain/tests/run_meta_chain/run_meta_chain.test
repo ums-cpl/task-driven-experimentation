@@ -1,0 +1,13 @@
+# run_meta.sh chain sets WORKLOAD_NAME in manifest
+RUN: --dry-run tasks/level1/leaf
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	leaf_wn
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	leaf-run	tasks/level1/leaf
+END_STDOUT

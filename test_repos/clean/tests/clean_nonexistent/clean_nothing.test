@@ -1,0 +1,3 @@
+# --clean with no matching runs exits 0
+RUN: --clean tasks/alpha:nonexistent
+EXIT: 0

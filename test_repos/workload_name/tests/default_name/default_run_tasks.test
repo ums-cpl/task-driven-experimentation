@@ -1,0 +1,13 @@
+# Default WORKLOAD_NAME is "run_tasks"
+RUN: --dry-run tasks/default_name
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/default_name
+END_STDOUT

@@ -1,0 +1,27 @@
+# Three-stage chain: top -> middle -> base
+RUN: --dry-run --include-deps tasks/top
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/base
+---
+JOB	1
+STAGE	1
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	0
+0	assets	tasks/middle
+---
+JOB	2
+STAGE	2
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	1
+0	assets	tasks/top
+END_STDOUT

@@ -1,0 +1,8 @@
+# Successful task creates .run_success marker (via array execution mode)
+RUN: --array-manifest=$ASSETS/succeed_manifest --array-job-id=0 --array-task-id=0
+EXIT: 0
+FILE_EXISTS: $TASKS/succeed/assets/.run_success
+FILE_EXISTS: $TASKS/succeed/assets/.run_begin
+FILE_EXISTS: $TASKS/succeed/assets/.run_metadata
+FILE_EXISTS: $TASKS/succeed/assets/.run_script.sh
+FILE_EXISTS: $TASKS/succeed/assets/.run_output.log

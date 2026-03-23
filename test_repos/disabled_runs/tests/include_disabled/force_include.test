@@ -1,0 +1,14 @@
+# --include-disabled forces disabled task into manifest
+RUN: --dry-run --include-disabled tasks/disabled_task tasks/enabled_task
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/disabled_task
+1	assets	tasks/enabled_task
+END_STDOUT

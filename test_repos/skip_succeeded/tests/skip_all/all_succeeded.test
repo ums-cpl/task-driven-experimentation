@@ -1,0 +1,6 @@
+# All tasks succeeded: nothing to submit
+RUN: --skip-succeeded tasks/done_task
+EXIT: 0
+STDOUT:
+All tasks already succeeded, nothing to submit.
+END_STDOUT

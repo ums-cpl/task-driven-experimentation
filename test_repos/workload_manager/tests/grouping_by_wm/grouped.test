@@ -1,0 +1,14 @@
+# Two tasks with same workload manager are grouped
+RUN: --dry-run tasks/direct_task tasks/also_direct
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/direct_task
+1	assets	tasks/also_direct
+END_STDOUT

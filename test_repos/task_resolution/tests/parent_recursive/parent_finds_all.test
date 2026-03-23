@@ -1,0 +1,14 @@
+# Parent directory recursively finds all tasks
+RUN: --dry-run tasks/parent
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/parent/child_b
+1	assets	tasks/parent/child_a
+END_STDOUT

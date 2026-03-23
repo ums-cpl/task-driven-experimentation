@@ -1,0 +1,3 @@
+# --status exits 0 when task has succeeded
+RUN: --status tasks/task_a:run_a
+EXIT: 0

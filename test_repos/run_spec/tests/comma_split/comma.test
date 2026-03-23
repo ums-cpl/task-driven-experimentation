@@ -1,0 +1,14 @@
+# Comma splits run specs at depth 0
+RUN: --dry-run "tasks/simple:x,y"
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	x	tasks/simple	TASK_RUNS=x,y
+1	y	tasks/simple	TASK_RUNS=x,y
+END_STDOUT

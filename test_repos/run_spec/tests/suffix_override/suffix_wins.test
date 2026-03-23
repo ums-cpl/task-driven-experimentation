@@ -1,0 +1,13 @@
+# Suffix overrides TASK_RUNS from task_meta.sh
+RUN: --dry-run tasks/with_runs:custom
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	custom	tasks/with_runs	TASK_RUNS=custom
+END_STDOUT

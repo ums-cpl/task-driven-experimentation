@@ -1,5 +1,0 @@
-# Unrecognised option must fail with usage hint
---dry-run --foo tasks/build/containers/gcc
-EXPECT_FAILURE:
-Error: Unrecognised option: --foo
-Use --help for usage.

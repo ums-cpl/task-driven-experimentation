@@ -1,0 +1,3 @@
+# Circular dependency fails
+RUN: --dry-run --include-deps tasks/circ_a tasks/circ_b
+EXIT: 1

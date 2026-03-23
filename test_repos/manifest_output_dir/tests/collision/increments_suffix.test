@@ -1,0 +1,7 @@
+# Second run creates workload_logs/run_tasks_1/
+RUN: tasks/alpha
+EXIT: 0
+FILE_EXISTS: $TEST_NAME.workdir/workload_logs/run_tasks/manifest
+RUN: tasks/alpha
+EXIT: 0
+FILE_EXISTS: $TEST_NAME.workdir/workload_logs/run_tasks_1/manifest

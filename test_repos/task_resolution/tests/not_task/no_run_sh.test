@@ -1,0 +1,8 @@
+# Directory without run.sh: resolve_arg error is in a subshell so the
+# script continues with no tasks and produces an empty manifest.
+RUN: --dry-run tasks/empty_dir
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+END_STDOUT

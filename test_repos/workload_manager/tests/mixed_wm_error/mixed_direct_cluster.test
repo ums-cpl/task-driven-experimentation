@@ -1,0 +1,3 @@
+# Mixing direct.sh with other WMs fails
+RUN: --dry-run tasks/direct_task tasks/custom_wm
+EXIT: 1

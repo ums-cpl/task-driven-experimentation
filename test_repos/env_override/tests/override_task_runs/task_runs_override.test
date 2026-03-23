@@ -1,0 +1,13 @@
+# TASK_RUNS override changes run name
+RUN: --dry-run TASK_RUNS=custom tasks/alpha
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	custom	tasks/alpha	TASK_RUNS=custom
+END_STDOUT

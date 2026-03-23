@@ -1,0 +1,7 @@
+# Unrecognised option exits 1 with error on stderr
+RUN: --dry-run --foo tasks/alpha
+EXIT: 1
+STDERR:
+Error: Unrecognised option: --foo
+Use --help for usage.
+END_STDERR

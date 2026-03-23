@@ -184,20 +184,75 @@ where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based run index with
 
 ## Test runner
 
-The test runner in `.template/tests/` runs `run_tasks.sh` with arguments taken from each case file and diffs stdout/stderr to the expected output. Run it from the repository root.
+The declarative test runner in `./.template/run_tests.sh` runs `./run_tasks.sh` against each `.test` file and validates:
+- exit code (`EXIT:`)
+- stdout/stderr (`STDOUT:` / `STDERR:` or `STDOUT_FILE:` / `STDERR_FILE:`)
+- file effects inside the per-test workdir (`FILE_EXISTS:`, `FILE_CONTENT:`, etc.)
+
+Run it from the repository root.
 
 **Usage:**
 
 ```bash
-./.template/tests/run_tests.sh [TEST ...]
+./.template/run_tests.sh [GLOB ...]
 ```
 
-- **No arguments:** Run all case files under `.template/tests/cases/` recursively. Only files with the `.expected` suffix are considered case files.
-- **With arguments:** Run only the cases specified by each TEST. TEST can be:
-  - A **case file** (path to a `.expected` file): run that case.
-  - A **directory:** run all `.expected` files under that directory recursively.
-  - A **wildcard pattern:** e.g. `.template/tests/cases/build*` or `.template/tests/cases/**/*.expected`. Bash `globstar` is enabled for `**`.
+- **No arguments:** discover tests under `tests/` recursively (any `.test` file).
+- **With arguments:** run only the tests matched by the provided globs (paths are resolved relative to the current working directory unless absolute).
 
-TEST paths are relative to the current working directory (or absolute). For example, from the repository root you might pass `.template/tests/cases/build.expected` or `.template/tests/cases/`. The runner resolves TESTs to a deduplicated list of case files (`.expected` only), then runs each.
 
-**Case file format:** Case files use the `.expected` suffix (e.g. `build.expected`). Comment lines (starting with `#` after optional leading whitespace) are ignored throughout. After skipping comments: the first line is the full invocation args for `run_tasks.sh` (e.g. `--dry-run tasks/build` for manifest tests, or other args to test status printing, etc.), the second must be `EXPECT_SUCCESS:` or `EXPECT_FAILURE:`, and the rest is the expected output. For `EXPECT_SUCCESS:` the expected content is stdout (e.g. the manifest when using `--dry-run`). For `EXPECT_FAILURE:` the run is expected to exit non-zero and the expected content is stderr (optional; if empty, only the non-zero exit is asserted). You can use comments to document the test's purpose, including at the top of the file. On diff failure, the actual output is saved to a file with the same base name and `.actual` suffix (e.g. `build.actual`).
+### Per-test workdir behavior
+
+For each `.test` file, the runner creates a per-test workdir next to the test file:
+
+`<test_directory>/<name>.workdir/`
+
+It is initialized before running directives to provide a clean testing environment:
+- a symlink to the template at `.template/` inside the workdir
+- a symlink to the repo `assets/` directory at `assets/` inside the workdir
+- a copy of the repo `tasks/` directory at `tasks/` inside the workdir
+
+After the test:
+- on PASS: the workdir is removed
+- on FAIL: the workdir is kept for inspection, and the runner writes a failure log next to the `.test` file
+
+### Failure artifacts
+
+On FAIL, the runner writes `<name>.failed` next to the `.test` file.
+
+For `STDOUT_FILE:` / `STDERR_FILE:` / `FILES_MATCH:` mismatches, the runner also writes an `.actual.*` file beside the expected reference file and points to it from `<name>.failed`.
+
+### `.test` DSL
+
+Directive parsing rules:
+- comment lines: lines whose first non-whitespace character is `#`
+- blank lines are ignored
+- directives are processed in order
+
+Commands:
+- `RUN: <args>` starts a command block (invokes `run_tasks.sh` with shell word-splitting of `<args>`)
+- `EXIT: <code>` is required after each `RUN:` and asserts the last command’s exit code
+
+Optional expectations (checked after the matching `EXIT:`):
+- `STDOUT: ... END_STDOUT` exact stdout block
+- `STDOUT_FILE: <path>` compare stdout to a reference file
+- `STDERR: ... END_STDERR` exact stderr block
+- `STDERR_FILE: <path>` compare stderr to a reference file
+- `FILE_EXISTS: <path>` assert a regular file exists under the workdir repo root
+- `FILE_NOT_EXISTS: <path>` assert nothing exists under the workdir repo root
+- `FILE_CONTENT: <path>` ... `END_FILE_CONTENT` exact file content under the workdir repo root
+- `FILES_MATCH: <repo_path> <test_path>` compare a file under the workdir repo root (`repo_path`) to a reference file (`test_path`)
+
+### Path token support
+
+Paths inside directive values may contain the following tokens:
+- `$TASKS` (expanded to the workdir `tasks/` directory)
+- `$ASSETS` (expanded to the workdir `assets/` directory)
+- `$TEST_WORKDIR` (expanded to the absolute path of the current test's workdir)
+- `$TEST_NAME` (expanded to `<name>` for the current test)
+
+After token expansion:
+- if the resulting path is absolute, it is used as-is
+- otherwise the path is resolved relative to the directory containing the `.test` file
+
+For `FILE_*` directives and the `repo_path` side of `FILES_MATCH:`, resolution is the same: after token expansion, non-absolute paths are resolved relative to the directory containing the `.test` file. Use `$TASKS` / `$ASSETS` to refer into the per-test workdir.

@@ -1,0 +1,14 @@
+# Two task specs appear in order
+RUN: --dry-run tasks/a tasks/b
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/a
+1	assets	tasks/b
+END_STDOUT

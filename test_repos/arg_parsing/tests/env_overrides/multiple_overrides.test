@@ -1,0 +1,13 @@
+# Multiple KEY=VALUE overrides appear in manifest
+RUN: --dry-run FOO=bar BAZ=qux tasks/alpha
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/alpha	FOO=bar	BAZ=qux
+END_STDOUT
