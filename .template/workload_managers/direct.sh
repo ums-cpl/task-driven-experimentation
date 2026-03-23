@@ -39,11 +39,7 @@ for jid in "${WM_JOB_IDS[@]}"; do
     if [[ -n "$manifest_line" ]]; then
       run_name=$(echo "$manifest_line" | cut -f2)
       path=$(echo "$manifest_line" | cut -f3)
-      if [[ "$path" == tasks/* ]]; then
-        display_path="${path#tasks/}"
-      else
-        display_path="$path"
-      fi
+      display_path="$path"
     else
       display_path="job${jid}/idx${idx}"
       run_name="?"
