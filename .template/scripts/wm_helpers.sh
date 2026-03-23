@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Shared workload manager helpers: manifest parsing, wm_job_ids, job iteration, depends resolution.
 # Source from workload manager scripts. Requires REPOSITORY_ROOT to be set.
-RUNNER="${REPOSITORY_ROOT:?}/run_tasks.sh"
+TEMPLATE="${REPOSITORY_ROOT:?}/.template"
+RUNNER="$TEMPLATE/run_tasks.sh"
 
 # Parse manifest for JOBs in the given stage that match our WM identity.
 # Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative).

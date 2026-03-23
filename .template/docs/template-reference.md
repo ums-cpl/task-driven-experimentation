@@ -168,7 +168,7 @@ The script parses the manifest, filters to JOB blocks where `STAGE` matches `$3`
 **Contract:** The script must (1) fully parse and validate the manifest before submitting any jobs; (2) submit/run only jobs in the given stage whose `WORKLOAD_MANAGER` matches the script; (3) each task run must execute:
 
 ```bash
-"$REPOSITORY_ROOT/run_tasks.sh" --array-manifest="$MANIFEST_PATH" --array-job-id=<JOB> --array-task-id=<INDEX>
+"$TEMPLATE/run_tasks.sh" --array-manifest="$MANIFEST_PATH" --array-job-id=<JOB> --array-task-id=<INDEX>
 ```
 
 where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based run index within that job.

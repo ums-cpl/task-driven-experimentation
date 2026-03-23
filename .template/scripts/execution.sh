@@ -387,7 +387,8 @@ create_manifest() {
 #!/usr/bin/env bash
 set -euo pipefail
 REPOSITORY_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-exec "$REPOSITORY_ROOT/run_tasks.sh" --status-manifest="$(dirname "$0")/manifest"
+TEMPLATE="$REPOSITORY_ROOT/.template"
+exec "$TEMPLATE/run_tasks.sh" --status-manifest="$(dirname "$0")/manifest"
 STATUS_HELPER
   chmod +x "$inv_dir/status.sh"
 

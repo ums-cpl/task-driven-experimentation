@@ -150,10 +150,6 @@ setup_workdir() {
   # Symlink template + assets; copy tasks (required to keep workdir independent).
   ln -sfn "$REPO_ROOT/.template" "$WORK_ROOT/.template"
   ln -sfn "$REPO_ROOT/assets" "$WORK_ROOT/assets"
-  # Workload-manager helpers expect `"$REPOSITORY_ROOT/run_tasks.sh"` to exist.
-  # That must be the repository root wrapper, because `.template/run_tasks.sh`
-  # computes `REPOSITORY_ROOT` relative to its own invocation path.
-  ln -sfn "$REPO_ROOT/run_tasks.sh" "$WORK_ROOT/run_tasks.sh"
   rm -rf "$TASKS_DIR"
   cp -a "$REPO_ROOT/tasks" "$TASKS_DIR"
 }
