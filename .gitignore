@@ -2,3 +2,4 @@
 workload_logs/
 *.failed
 *.actual.*
+.scratch/
