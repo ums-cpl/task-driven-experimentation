@@ -4,16 +4,26 @@
 
 set -euo pipefail
 
-# Abort whole run on CTRL+C (SIGINT)
 trap 'echo ""; echo "Interrupted. Aborting run." >&2; exit 130' INT
 
-REPOSITORY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEMPLATE="$REPOSITORY_ROOT/.template"
-TASKS="$REPOSITORY_ROOT/tasks"
-ASSETS="$REPOSITORY_ROOT/assets"
+# Module roots (the template directory containing this runner).
+TEMPLATE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MODULE_ROOT="$(cd "$TEMPLATE_DIR/.." && pwd)"
+
+# Caller-injected "instance roots". Defaults make this repo self-contained.
+: "${REPOSITORY_ROOT:="$MODULE_ROOT"}"
+: "${TASKS:="$REPOSITORY_ROOT/tasks"}"
+: "${ASSETS:="$REPOSITORY_ROOT/assets"}"
+
+# The template dir to use for scripts/workload-managers/container-managers.
+: "${TEMPLATE:="$TEMPLATE_DIR"}"
+: "${RUN_TASKS_LIB:="$TEMPLATE/scripts"}"
+
 WORKLOAD_MANAGERS="$TEMPLATE/workload_managers"
 CONTAINER_MANAGERS="$TEMPLATE/container_managers"
-RUN_TASKS_LIB="$REPOSITORY_ROOT/.template/scripts"
+
+# Wrapper path for re-invocation (cluster jobs do not inherit env vars).
+: "${RUN_TASKS_SCRIPT:="$REPOSITORY_ROOT/run_tasks.sh"}"
 
 source "$RUN_TASKS_LIB/config.sh"
 source "$RUN_TASKS_LIB/args.sh"

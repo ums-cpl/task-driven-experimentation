@@ -55,6 +55,8 @@ resolve_task_var() {
   source_cmds=$(build_source_cmds_with_overrides meta_files)
 
   bash -c "
+    export REPOSITORY_ROOT=\"$REPOSITORY_ROOT\"
+    export TEMPLATE=\"$TEMPLATE\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
@@ -80,6 +82,8 @@ resolve_task_var_isset() {
   source_cmds=$(build_source_cmds_with_overrides meta_files)
 
   bash -c "
+    export REPOSITORY_ROOT=\"$REPOSITORY_ROOT\"
+    export TEMPLATE=\"$TEMPLATE\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
@@ -111,6 +115,8 @@ resolve_run_var() {
   source_cmds_run_meta=$(build_source_cmds_with_overrides run_meta_files)
 
   bash -c "
+    export REPOSITORY_ROOT=\"$REPOSITORY_ROOT\"
+    export TEMPLATE=\"$TEMPLATE\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
@@ -143,6 +149,8 @@ resolve_run_var_isset() {
   source_cmds_run_meta=$(build_source_cmds_with_overrides run_meta_files)
 
   bash -c "
+    export REPOSITORY_ROOT=\"$REPOSITORY_ROOT\"
+    export TEMPLATE=\"$TEMPLATE\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
@@ -185,6 +193,8 @@ get_task_dependencies() {
   while IFS= read -r dep; do
     [[ -n "$dep" ]] && _out+=("$dep")
   done < <(bash -c "
+    export REPOSITORY_ROOT=\"$REPOSITORY_ROOT\"
+    export TEMPLATE=\"$TEMPLATE\"
     export ASSETS=\"$ASSETS\"
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"

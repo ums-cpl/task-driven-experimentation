@@ -8,17 +8,14 @@ is_run_folder() {
 }
 
 # Resolves a single argument to a list of absolute task directory paths.
-# Must be called from REPOSITORY_ROOT or with paths relative to it.
+# Resolves relative paths against the current working directory; validates that
+# results are located under the injected $TASKS root.
 resolve_arg() {
   local arg="$1"
-  local repo_root="$2"
   local resolved=()
 
-  # Enter the repository root directory to ensure relative path handling,
-  # and determine the absolute path of the 'tasks' directory for later checking.
-  (cd "$repo_root" || exit 1
   local tasks_root_abs
-  tasks_root_abs="$(cd "$repo_root/tasks" && pwd)"
+  tasks_root_abs="$(cd "$TASKS" 2>/dev/null && pwd)" || { echo "Error: TASKS not found: $TASKS" >&2; exit 1; }
 
   # Handle wildcards: expand glob and filter to dirs with run.sh
     # (* and ? = standard glob; !( = extglob exclusion)
@@ -68,7 +65,6 @@ resolve_arg() {
   fi
 
   printf '%s\n' "${resolved[@]}"
-  )
 }
 
 # Reduce tab-separated KEY=VALUE list to final value per key (last occurrence wins).
@@ -192,7 +188,7 @@ build_task_run_pairs() {
         existing="${existing:+$existing }$r"
       done
       task_runs["$task_dir"]="$existing"
-    done < <(resolve_arg "$task_path" "$REPOSITORY_ROOT")
+      done < <(resolve_arg "$task_path")
 
     # Emit pairs for this spec in run-first, task-second order
     # Only add TASK_RUNS to overrides when explicitly from CLI: user-used suffix (spec_idx < ORIGINAL_TASK_SPEC_COUNT). Do not add for specs added by --include-deps or when TASK_RUNS comes from task_meta/default.
@@ -265,7 +261,11 @@ build_task_run_pairs() {
     [[ -n "$pair_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$pair_ov_tsv"
     local wm workload_name
     wm=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_MANAGER")
-    [[ -z "$wm" ]] && wm=".template/workload_managers/direct.sh"
+    [[ -z "$wm" ]] && wm="$TEMPLATE/workload_managers/direct.sh"
+    if [[ "$wm" != /* ]]; then
+      echo "Error: RUN_WORKLOAD_MANAGER must be an absolute path. Got: $wm" >&2
+      exit 1
+    fi
     workload_name=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_NAME")
     # Default to run_tasks only when RUN_WORKLOAD_NAME is unset (neither in overrides nor run_meta.sh)
     if [[ -z "$workload_name" ]]; then

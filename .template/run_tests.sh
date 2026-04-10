@@ -150,6 +150,23 @@ setup_workdir() {
   # Symlink template + assets; copy tasks (required to keep workdir independent).
   ln -sfn "$REPO_ROOT/.template" "$WORK_ROOT/.template"
   ln -sfn "$REPO_ROOT/assets" "$WORK_ROOT/assets"
+
+  # Create the workdir-local wrapper that workload managers use to re-inject
+  # environment variables in direct/cluster/array modes.
+  cat > "$WORK_ROOT/run_tasks.sh" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+export REPOSITORY_ROOT="$WORK_ROOT"
+export TASKS="$TASKS_DIR"
+export ASSETS="$ASSETS_DIR"
+export TEMPLATE="$WORK_ROOT/.template"
+export RUN_TASKS_SCRIPT="$WORK_ROOT/run_tasks.sh"
+
+exec "\$TEMPLATE/run_tasks.sh" "\$@"
+EOF
+  chmod +x "$WORK_ROOT/run_tasks.sh"
+
   rm -rf "$TASKS_DIR"
   cp -a "$REPO_ROOT/tasks" "$TASKS_DIR"
 }
@@ -279,14 +296,22 @@ run_one_test_file() {
         fi
         buf+="$line"
       done
-      if ! str_eq "$buf" "$last_stdout"; then
+      # Normalise absolute paths in runner output so expectations stay portable.
+      # (Manifest now contains absolute TASK PATH and WORKLOAD_MANAGER script paths.)
+      local normalized_last_stdout
+      normalized_last_stdout="$last_stdout"
+      normalized_last_stdout="$(printf '%s' "$normalized_last_stdout" | sed \
+        -e "s#${TASKS_DIR%/}/#tasks/#g" \
+        -e "s#${WORK_ROOT%/}/.template/#.template/#g" \
+        -e "s#${REPO_ROOT%/}/.template/#.template/#g")"
+      if ! str_eq "$buf" "$normalized_last_stdout"; then
         TEST_OK=0
         TEST_FAIL_REASON="STDOUT mismatch"
         log_append "STDOUT:"
         log_append "$buf"
         log_append "END_STDOUT"
         log_append "ACTUAL_STDOUT:"
-        log_append "$last_stdout"
+        log_append "$normalized_last_stdout"
         log_append "END_ACTUAL_STDOUT"
         break
       fi

@@ -10,6 +10,6 @@ SBATCH_CPUS_PER_TASK="4"
 SBATCH_MEM="10gb"
 SBATCH_TIME="2:00:00"
 
-source "${REPOSITORY_ROOT:?}/.template/scripts/wm_helpers.sh"
+source "${TEMPLATE:?}/scripts/wm_helpers.sh"
 wm_slurm_submit_stage "$MANIFEST" "$LOG_DIR" "$STAGE"
 

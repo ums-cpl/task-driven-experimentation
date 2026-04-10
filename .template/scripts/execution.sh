@@ -1,6 +1,43 @@
 #!/usr/bin/env bash
 # Task execution and manifest creation for workload manager.
 
+_require_abs_under_repo_root() {
+  local what="$1"
+  local abs="$2"
+  local repo_root="${REPOSITORY_ROOT:?}"
+  [[ -z "$abs" ]] && { echo "Error: $what path is empty" >&2; return 1; }
+  [[ "$abs" != /* ]] && { echo "Error: $what path must be absolute: $abs" >&2; return 1; }
+  [[ "$abs" != "$repo_root" && "$abs" != "$repo_root/"* ]] && { echo "Error: $what must be under REPOSITORY_ROOT ($repo_root): $abs" >&2; return 1; }
+  return 0
+}
+
+_abs_to_repo_rel() {
+  local abs="$1"
+  local repo_root="${REPOSITORY_ROOT:?}"
+  _require_abs_under_repo_root "Path" "$abs" || return 1
+  if [[ "$abs" == "$repo_root" ]]; then
+    echo "."
+  else
+    echo "${abs#"$repo_root"/}"
+  fi
+}
+
+_resolve_container_manager_script_for_pair() {
+  local task_dir="$1"
+  local run_name="$2"
+  local cm
+  cm=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_MANAGER" | xargs)
+  if [[ -z "$cm" ]]; then
+    echo "$TEMPLATE/container_managers/apptainer.sh"
+    return 0
+  fi
+  if [[ "$cm" != /* ]]; then
+    echo "Error: RUN_CONTAINER_MANAGER must be an absolute path. Got: $cm" >&2
+    return 1
+  fi
+  echo "$cm"
+}
+
 run_task() {
   local task_dir="$1"
   local run_name="$2"
@@ -34,9 +71,16 @@ run_task() {
   container_gpu=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_GPU" | xargs)
   container_flags=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_FLAGS" | xargs)
   container_manager_rel=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_MANAGER" | xargs)
-  [[ -z "$container_manager_rel" ]] && container_manager_rel=".template/container_managers/apptainer.sh"
-  local container_manager_script="$container_manager_rel"
-  [[ "$container_manager_script" != /* ]] && container_manager_script="$REPOSITORY_ROOT/$container_manager_script"
+  if [[ -z "$container_manager_rel" ]]; then
+    container_manager_script="$TEMPLATE/container_managers/apptainer.sh"
+  else
+    if [[ "$container_manager_rel" != /* ]]; then
+      echo "Error: RUN_CONTAINER_MANAGER must be an absolute path. Got: $container_manager_rel" >&2
+      return 1
+    fi
+    container_manager_script="$container_manager_rel"
+  fi
+  _require_abs_under_repo_root "CONTAINER_MANAGER" "$container_manager_script" || return 1
 
   # Dry-run mode: no file changes, caller prints DRY RUN status
   if [[ "$DRY_RUN" == true ]]; then
@@ -103,7 +147,7 @@ export ASSETS="$ASSETS"
 export TASKS="$TASKS"
 export WORKLOAD_MANAGERS="$WORKLOAD_MANAGERS"
 export CONTAINER_MANAGERS="$CONTAINER_MANAGERS"
-export CONTAINER_MANAGER="$container_manager_rel"
+export CONTAINER_MANAGER="$container_manager_script"
 export REPOSITORY_ROOT="$REPOSITORY_ROOT"
 export RUN_FOLDER="$run_folder"
 
@@ -120,7 +164,7 @@ export CONTAINER="\${RUN_CONTAINER:-}"
 export CONTAINER_DEF="\${RUN_CONTAINER_DEF:-}"
 export CONTAINER_GPU="\${RUN_CONTAINER_GPU:-}"
 export CONTAINER_FLAGS="\${RUN_CONTAINER_FLAGS:-}"
-export CONTAINER_MANAGER="\${RUN_CONTAINER_MANAGER:-$container_manager_rel}"
+export CONTAINER_MANAGER="\${RUN_CONTAINER_MANAGER:-$container_manager_script}"
 
 $container_exec_snippet_output
 
@@ -207,7 +251,7 @@ RUNNER_SCRIPT
 # True if WM path denotes direct.sh (no mixing with cluster WMs).
 is_direct_wm() {
   local wm="$1"
-  [[ "$wm" == *"/direct.sh" ]] || [[ "$wm" == ".template/workload_managers/direct.sh" ]]
+  [[ "$wm" == *"/direct.sh" ]]
 }
 
 # Creates a single manifest file. Group by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER).
@@ -243,8 +287,18 @@ create_manifest() {
     pair="${_task_run_pairs[$idx]}"
     occ_key="${TASK_RUN_PAIR_OCC_KEYS[$idx]:-}"
     st="${task_stage[$occ_key]:--1}"
-    wm="${TASK_RUN_PAIR_WM[$idx]:-.template/workload_managers/direct.sh}"
+    wm="${TASK_RUN_PAIR_WM[$idx]:-$TEMPLATE/workload_managers/direct.sh}"
     wname="${TASK_RUN_PAIR_WORKLOAD_NAME[$idx]:-}"
+
+    # Validate that all paths required for execution are under REPOSITORY_ROOT.
+    local task_dir="${pair%%	*}"
+    local run_name="${pair#*	}"
+    _require_abs_under_repo_root "TASK" "$task_dir" || exit 1
+    _require_abs_under_repo_root "WORKLOAD_MANAGER" "$wm" || exit 1
+    local cm_script
+    cm_script="$(_resolve_container_manager_script_for_pair "$task_dir" "$run_name")" || exit 1
+    _require_abs_under_repo_root "CONTAINER_MANAGER" "$cm_script" || exit 1
+
     is_direct_wm "$wm" && has_direct=true || has_non_direct=true
     key="${st}	${wname}	${wm}"
     group_keys["$key"]=1
@@ -354,19 +408,19 @@ create_manifest() {
       echo "JOB	$job_id"
       echo "STAGE	$stage"
       echo "WORKLOAD_NAME	$wname"
-      echo "WORKLOAD_MANAGER	$wm"
+      echo "WORKLOAD_MANAGER	$(_abs_to_repo_rel "$wm")"
       echo "DEPENDS	$dep_list"
       i=0
       for idx in "${to_emit[@]}"; do
         pair="${_task_run_pairs[$idx]}"
         task_dir="${pair%%	*}"
         run_name="${pair#*	}"
-        relative_path="${task_dir#$REPOSITORY_ROOT/}"
+        task_path="$(_abs_to_repo_rel "$task_dir")"
         overrides="${TASK_RUN_PAIR_OVERRIDES[$idx]:-}"
         if [[ -n "$overrides" ]]; then
-          printf '%d\t%s\t%s\t%s\n' "$i" "$run_name" "$relative_path" "$overrides"
+          printf '%d\t%s\t%s\t%s\n' "$i" "$run_name" "$task_path" "$overrides"
         else
-          printf '%d\t%s\t%s\n' "$i" "$run_name" "$relative_path"
+          printf '%d\t%s\t%s\n' "$i" "$run_name" "$task_path"
         fi
         i=$((i + 1))
       done
@@ -386,10 +440,10 @@ create_manifest() {
   cat > "$inv_dir/status.sh" << 'STATUS_HELPER'
 #!/usr/bin/env bash
 set -euo pipefail
-REPOSITORY_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-TEMPLATE="$REPOSITORY_ROOT/.template"
-exec "$TEMPLATE/run_tasks.sh" --status-manifest="$(dirname "$0")/manifest"
+exec "__RUN_TASKS_SCRIPT__" --status-manifest="$(dirname "\$0")/manifest"
 STATUS_HELPER
+  # Inject wrapper path without expanding $0/command-substitutions from inside the helper.
+  sed -i "s#__RUN_TASKS_SCRIPT__#${RUN_TASKS_SCRIPT//\//\\/}#g" "$inv_dir/status.sh"
   chmod +x "$inv_dir/status.sh"
 
   echo "$manifest_path"

@@ -25,7 +25,7 @@ main() {
     fi
 
     if [[ "$STATUS_MODE" == true && ${#TASK_SPECS[@]} -eq 0 ]]; then
-      TASK_SPECS=("tasks")
+      TASK_SPECS=("$TASKS")
       TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
     fi
     if [[ ${#TASK_SPECS[@]} -gt 0 ]]; then
@@ -33,10 +33,10 @@ main() {
       for pair in "${TASK_RUN_PAIRS[@]}"; do
         task_dir="${pair%%	*}"
         run_name="${pair#*	}"
-        relative_path="${task_dir#$REPOSITORY_ROOT/}"
-        key="$relative_path	$run_name"
+        task_path="${task_dir#$REPOSITORY_ROOT/}"
+        key="$task_path	$run_name"
         [[ -n "${seen_path_run[$key]:-}" ]] && continue
-        RUN_STATUS_ROWS+=("-	$run_name	$relative_path")
+        RUN_STATUS_ROWS+=("-	$run_name	$task_path")
       done
     fi
 
@@ -46,7 +46,7 @@ main() {
 
   # When no tasks specified, run all tasks under tasks/
   if [[ ${#TASK_SPECS[@]} -eq 0 ]]; then
-    TASK_SPECS=("tasks")
+    TASK_SPECS=("$TASKS")
     TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
   fi
   ORIGINAL_TASK_SPEC_COUNT=${#TASK_SPECS[@]}
@@ -142,7 +142,8 @@ main() {
       exit 0
     fi
     log_dir="$(dirname "$manifest_path")"
-    export REPOSITORY_ROOT
+    # Export injected roots for workload managers (direct and cluster modes).
+    export REPOSITORY_ROOT TASKS ASSETS TEMPLATE RUN_TASKS_SCRIPT
 
     # Parse manifest: max stage and whether all WMs are direct.sh
     max_stage_manifest=0

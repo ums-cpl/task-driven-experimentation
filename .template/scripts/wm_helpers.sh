@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 # Shared workload manager helpers: manifest parsing, wm_job_ids, job iteration, depends resolution.
-# Source from workload manager scripts. Requires REPOSITORY_ROOT to be set.
-TEMPLATE="${REPOSITORY_ROOT:?}/.template"
-RUNNER="$TEMPLATE/run_tasks.sh"
+# Source from workload manager scripts.
+# Required environment variables are injected by the framework/wrapper.
+: "${REPOSITORY_ROOT:?}"
+: "${TEMPLATE:?}"
+: "${RUN_TASKS_SCRIPT:?}"
+
+# Wrapper used for array execution (must re-inject env vars in cluster jobs).
+RUNNER="$RUN_TASKS_SCRIPT"
 
 # Parse manifest for JOBs in the given stage that match our WM identity.
 # Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative).
@@ -40,7 +45,8 @@ wm_parse_manifest_for_stage() {
     fi
     if [[ "$line" == WORKLOAD_MANAGER* ]]; then
       current_wm=$(echo "$line" | cut -f2)
-      [[ "$current_wm" != /* ]] && current_wm="${REPOSITORY_ROOT:?}/$current_wm"
+      [[ "$current_wm" == /* ]] && { echo "Error: Manifest WORKLOAD_MANAGER must be relative to REPOSITORY_ROOT: $current_wm" >&2; exit 1; }
+      current_wm="${REPOSITORY_ROOT:?}/$current_wm"
       continue
     fi
     if [[ "$line" == DEPENDS* ]]; then
@@ -117,6 +123,14 @@ _wm_slurm_default_sbatch() {
   echo "#SBATCH --output=${LOG_DIR}/job${jid}_%a.log"
   [[ -n "$dep_line" ]] && echo "$dep_line"
   echo ""
+
+  # Ensure wrapper env-injection variables are present in cluster jobs.
+  echo "export REPOSITORY_ROOT=\"${REPOSITORY_ROOT:-}\""
+  echo "export TASKS=\"${TASKS:-}\""
+  echo "export ASSETS=\"${ASSETS:-}\""
+  echo "export TEMPLATE=\"${TEMPLATE:-}\""
+  echo "export RUN_TASKS_SCRIPT=\"${RUN_TASKS_SCRIPT:-}\""
+
   echo "module add Apptainer"
   echo "exec \"$RUNNER\" --array-manifest=\"$MANIFEST\" --array-job-id=\"$jid\" --array-task-id=\${SLURM_ARRAY_TASK_ID}"
 }

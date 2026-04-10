@@ -7,7 +7,7 @@ SKIP_VERIFY_DEF=false
 JOB	0
 STAGE	0
 WORKLOAD_NAME	run_tasks
-WORKLOAD_MANAGER	custom/my_wm.sh
+WORKLOAD_MANAGER	tasks/custom_wm/custom/my_wm.sh
 DEPENDS	
 0	assets	tasks/custom_wm
 END_STDOUT

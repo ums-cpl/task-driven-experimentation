@@ -13,7 +13,7 @@ mkdir -p "$LOG_DIR"
 
 OUR_SCRIPT_ABS="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 
-source "${REPOSITORY_ROOT:?}/.template/scripts/wm_helpers.sh"
+source "${TEMPLATE:?}/scripts/wm_helpers.sh"
 wm_parse_manifest_for_stage "$MANIFEST" "$STAGE" "$OUR_SCRIPT_ABS"
 
 total_ops=0

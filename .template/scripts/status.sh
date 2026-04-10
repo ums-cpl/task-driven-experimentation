@@ -55,11 +55,7 @@ print_task_run_status() {
       fi
     fi
 
-    if [[ "$path" == *"/tasks/"* ]]; then
-      display_path="tasks/${path#*/tasks/}"
-    else
-      display_path="$path"
-    fi
+    display_path="$path"
     printf "%-7s  %-27s  %-64s  %b\n" "$display_id" "$run" "$display_path" "$status"
   done
 }
