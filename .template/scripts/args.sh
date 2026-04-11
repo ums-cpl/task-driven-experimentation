@@ -21,6 +21,7 @@ Options:
   --skip-verify-def      Skip verification that container image matches definition file
   --include-disabled     Run runs even if RUN_DISABLED is set in run_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
+  --direct               Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
   --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE Show exit states for all task runs listed in FILE (manifest from a prior run)
   -h, --help             Show this help
@@ -81,6 +82,10 @@ parse_args() {
         ;;
       --include-deps)
         INCLUDE_DEPS=true
+        shift
+        ;;
+      --direct)
+        ENV_OVERRIDES+=("RUN_WORKLOAD_MANAGER=${TEMPLATE}/workload_managers/direct.sh")
         shift
         ;;
       --status)
