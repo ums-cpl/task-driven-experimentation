@@ -9,9 +9,9 @@
 # Wrapper used for array execution (must re-inject env vars in cluster jobs).
 RUNNER="$RUN_TASKS_SCRIPT"
 
-# Longest common prefix string of all paths (character-wise), e.g. tasks/build/cuBLAS and
-# tasks/build/cuDNN -> tasks/build/cu. Args: nameref to indexed array of repo-relative paths.
-_wm_longest_common_string_prefix() {
+# Longest common path-segment prefix of all paths, e.g. tasks/build/cuBLAS and
+# tasks/build/cuDNN -> tasks/build/. Args: nameref to indexed array of repo-relative paths.
+_wm_longest_common_path_prefix() {
   local -n _wm_paths=$1
   [[ ${#_wm_paths[@]} -eq 0 ]] && {
     echo ""
@@ -31,7 +31,12 @@ _wm_longest_common_string_prefix() {
     done
     len=$k
   done
-  echo "${ref:0:len}"
+  local prefix="${ref:0:len}"
+  [[ "$prefix" == */ ]] && {
+    echo "$prefix"
+    return
+  }
+  [[ "$prefix" == */* ]] && echo "${prefix%/*}/" || echo ""
 }
 
 # Manifest-wide common prefix across per-job task-path prefixes.
@@ -77,11 +82,11 @@ _wm_manifest_global_job_prefix() {
       [[ -n "$path_line" ]] && path_arr+=("$path_line")
     done <<< "$lines"
     [[ ${#path_arr[@]} -eq 0 ]] && continue
-    job_common=$(_wm_longest_common_string_prefix path_arr)
+    job_common=$(_wm_longest_common_path_prefix path_arr)
     job_prefixes+=("$job_common")
   done
 
-  _wm_longest_common_string_prefix job_prefixes
+  _wm_longest_common_path_prefix job_prefixes
 }
 
 # Parse manifest for JOBs in the given stage that match our WM identity.
@@ -159,7 +164,7 @@ wm_parse_manifest_for_stage() {
       WM_JOB_PATH_PREFIX["$j"]=""
       continue
     fi
-    common=$(_wm_longest_common_string_prefix path_arr)
+    common=$(_wm_longest_common_path_prefix path_arr)
     WM_JOB_PATH_PREFIX["$j"]="$common"
   done
 
