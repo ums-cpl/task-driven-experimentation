@@ -1,0 +1,14 @@
+# Custom base name still appends computed display suffix
+RUN: --dry-run tasks/custom_group/left tasks/custom_group/right
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	edge_job: custom_group/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/custom_group/left
+1	assets	tasks/custom_group/right
+END_STDOUT

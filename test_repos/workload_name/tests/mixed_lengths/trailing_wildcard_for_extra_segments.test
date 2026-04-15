@@ -1,0 +1,14 @@
+# Mixed path lengths append trailing "*" in display path
+RUN: --dry-run tasks/mixed/alpha/one tasks/mixed/beta/one/two
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: mixed/*/one/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/mixed/alpha/one
+1	assets	tasks/mixed/beta/one/two
+END_STDOUT

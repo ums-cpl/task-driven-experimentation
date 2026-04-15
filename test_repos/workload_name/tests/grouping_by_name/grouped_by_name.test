@@ -6,14 +6,14 @@ SKIP_VERIFY_DEF=false
 ---
 JOB	0
 STAGE	0
-WORKLOAD_NAME	run_tasks: .../default_name/...
+WORKLOAD_NAME	run_tasks: default_name
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/default_name
 ---
 JOB	1
 STAGE	0
-WORKLOAD_NAME	my_custom_job: .../custom_name/...
+WORKLOAD_NAME	my_custom_job: custom_name
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/custom_name

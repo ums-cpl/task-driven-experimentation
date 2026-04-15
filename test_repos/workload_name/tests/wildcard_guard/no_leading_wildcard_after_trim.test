@@ -1,0 +1,15 @@
+# Prefix trimming does not allow display path to start with "*"
+RUN: --dry-run tasks/experiment/MatMul/IS1/TVM/bench tasks/experiment/MatMul/IS1/PPCG/bench tasks/experiment/MatMul/IS1/cuBLAS
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: IS1/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/experiment/MatMul/IS1/TVM/bench
+1	assets	tasks/experiment/MatMul/IS1/PPCG/bench
+2	assets	tasks/experiment/MatMul/IS1/cuBLAS
+END_STDOUT

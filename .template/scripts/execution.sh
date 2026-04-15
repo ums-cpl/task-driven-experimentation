@@ -50,6 +50,101 @@ _longest_common_path_prefix() {
   [[ "$prefix" == */* ]] && echo "${prefix%/*}/" || echo ""
 }
 
+_path_to_segments() {
+  local path="$1"
+  local -n _segments_out=$2
+  local trimmed="${path#/}"
+  trimmed="${trimmed%/}"
+  if [[ -z "$trimmed" || "$trimmed" == "." ]]; then
+    _segments_out=()
+    return
+  fi
+  IFS='/' read -r -a _segments_out <<< "$trimmed"
+}
+
+_segments_to_path() {
+  local -n _segments=$1
+  local joined=""
+  local seg
+  for seg in "${_segments[@]}"; do
+    [[ -n "$joined" ]] && joined+="/"
+    joined+="$seg"
+  done
+  echo "$joined"
+}
+
+_longest_common_segment_prefix() {
+  local -n _paths=$1
+  local -a ref_segments=() cmp_segments=() prefix_segments=()
+  local i idx min_len same
+  [[ ${#_paths[@]} -eq 0 ]] && {
+    echo ""
+    return
+  }
+  _path_to_segments "${_paths[0]}" ref_segments
+  if [[ ${#_paths[@]} -eq 1 ]]; then
+    [[ ${#ref_segments[@]} -eq 0 ]] && echo "" || echo "$(_segments_to_path ref_segments)/"
+    return
+  fi
+  for ((idx = 0; idx < ${#ref_segments[@]}; idx++)); do
+    same=true
+    for ((i = 1; i < ${#_paths[@]}; i++)); do
+      _path_to_segments "${_paths[$i]}" cmp_segments
+      min_len=${#cmp_segments[@]}
+      if ((idx >= min_len)) || [[ "${cmp_segments[$idx]}" != "${ref_segments[$idx]}" ]]; then
+        same=false
+        break
+      fi
+    done
+    [[ "$same" == true ]] || break
+    prefix_segments+=("${ref_segments[$idx]}")
+  done
+  [[ ${#prefix_segments[@]} -eq 0 ]] && echo "" || echo "$(_segments_to_path prefix_segments)/"
+}
+
+_build_job_display_path() {
+  local -n _paths=$1
+  local -a ref_segments=() cur_segments=() display_segments=()
+  local i idx min_len seg wildcard_pending has_longer=false
+  [[ ${#_paths[@]} -eq 0 ]] && {
+    echo ""
+    return
+  }
+  _path_to_segments "${_paths[0]}" ref_segments
+  min_len=${#ref_segments[@]}
+  for ((i = 1; i < ${#_paths[@]}; i++)); do
+    _path_to_segments "${_paths[$i]}" cur_segments
+    (( ${#cur_segments[@]} < min_len )) && min_len=${#cur_segments[@]}
+  done
+  for ((idx = 0; idx < min_len; idx++)); do
+    seg="${ref_segments[$idx]}"
+    wildcard_pending=false
+    for ((i = 1; i < ${#_paths[@]}; i++)); do
+      _path_to_segments "${_paths[$i]}" cur_segments
+      if [[ "${cur_segments[$idx]}" != "$seg" ]]; then
+        wildcard_pending=true
+        break
+      fi
+    done
+    if [[ "$wildcard_pending" == true ]]; then
+      [[ ${#display_segments[@]} -eq 0 || "${display_segments[${#display_segments[@]}-1]}" != "*" ]] && display_segments+=("*")
+    else
+      display_segments+=("$seg")
+    fi
+  done
+  for ((i = 0; i < ${#_paths[@]}; i++)); do
+    _path_to_segments "${_paths[$i]}" cur_segments
+    if (( ${#cur_segments[@]} > min_len )); then
+      has_longer=true
+      break
+    fi
+  done
+  if [[ "$has_longer" == true ]]; then
+    [[ ${#display_segments[@]} -eq 0 || "${display_segments[${#display_segments[@]}-1]}" != "*" ]] && display_segments+=("*")
+  fi
+  _segments_to_path display_segments
+}
+
 _resolve_container_manager_script_for_pair() {
   local task_dir="$1"
   local run_name="$2"
@@ -389,13 +484,16 @@ create_manifest() {
   done
 
   # Compute display workload names at manifest generation time.
-  # For each emitted job, compute its common task-path prefix, then trim the
-  # manifest-wide common root and append the remainder to WORKLOAD_NAME.
-  declare -A key_to_job_prefix=()
+  # Per job, build a display path with "*" at differing segments (up to the
+  # shortest task path), and trim at most the manifest-wide prefix while
+  # ensuring the resulting display path does not start with "*".
+  declare -A key_to_job_display_path=()
   declare -A key_to_workload_name=()
-  local -a all_job_prefixes=()
+  local -a all_manifest_paths=()
   local -a path_arr=()
-  local global_prefix="" job_prefix trimmed_prefix suffix_display
+  local -a candidate_segments=() manifest_prefix_segments=() suffix_segments=()
+  local manifest_prefix="" job_display_path="" suffix_display task_path_rel=""
+  local remove_limit=0 removed=0
   for key in "${emitted_keys[@]}"; do
     local -a indices=()
     read -ra indices <<< "${group_pairs[$key]:-}"
@@ -404,24 +502,35 @@ create_manifest() {
       [[ "$SKIP_SUCCEEDED" == true ]] && is_task_run_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && continue
       pair="${_task_run_pairs[$idx]}"
       task_dir="${pair%%	*}"
-      path_arr+=("$(_abs_to_repo_rel "$task_dir")")
+      task_path_rel="$(_abs_to_repo_rel "$task_dir")"
+      path_arr+=("$task_path_rel")
+      all_manifest_paths+=("$task_path_rel")
     done
-    job_prefix=$(_longest_common_path_prefix path_arr)
-    key_to_job_prefix["$key"]="$job_prefix"
-    all_job_prefixes+=("$job_prefix")
+    job_display_path=$(_build_job_display_path path_arr)
+    key_to_job_display_path["$key"]="$job_display_path"
   done
-  global_prefix=$(_longest_common_path_prefix all_job_prefixes)
+  manifest_prefix=$(_longest_common_segment_prefix all_manifest_paths)
+  _path_to_segments "$manifest_prefix" manifest_prefix_segments
   for key in "${emitted_keys[@]}"; do
     wname="${key#*	}"
     wname="${wname%%	*}"
     key_to_workload_name["$key"]="$wname"
-    if [[ -n "$global_prefix" ]]; then
-      trimmed_prefix="${key_to_job_prefix[$key]#"$global_prefix"}"
-      if [[ -n "$trimmed_prefix" ]]; then
-        suffix_display="${trimmed_prefix#/}"
-        suffix_display="${suffix_display%/}"
-        [[ -n "$suffix_display" ]] && key_to_workload_name["$key"]="${wname}: .../${suffix_display}/..."
+    suffix_display="${key_to_job_display_path[$key]}"
+    [[ -z "$suffix_display" ]] && continue
+    _path_to_segments "$suffix_display" candidate_segments
+    remove_limit=${#manifest_prefix_segments[@]}
+    (( remove_limit > ${#candidate_segments[@]} )) && remove_limit=${#candidate_segments[@]}
+    removed=0
+    while (( removed < remove_limit )); do
+      if (( removed + 1 < ${#candidate_segments[@]} )) && [[ "${candidate_segments[$((removed + 1))]}" == "*" ]]; then
+        break
       fi
+      ((removed++)) || true
+    done
+    suffix_segments=("${candidate_segments[@]:$removed}")
+    suffix_display=$(_segments_to_path suffix_segments)
+    if [[ -n "$suffix_display" ]]; then
+      key_to_workload_name["$key"]="${wname}: ${suffix_display}"
     fi
   done
 

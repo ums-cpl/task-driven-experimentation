@@ -6,7 +6,7 @@ SKIP_VERIFY_DEF=false
 ---
 JOB	0
 STAGE	0
-WORKLOAD_NAME	run_tasks
+WORKLOAD_NAME	run_tasks: parent/*
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/parent/child_b

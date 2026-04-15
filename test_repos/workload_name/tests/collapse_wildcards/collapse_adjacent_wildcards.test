@@ -1,0 +1,14 @@
+# Adjacent differing path segments collapse to a single "*"
+RUN: --dry-run tasks/collapse/a/x/leaf tasks/collapse/b/y/leaf
+EXIT: 0
+STDOUT:
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: collapse/*/leaf
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/collapse/a/x/leaf
+1	assets	tasks/collapse/b/y/leaf
+END_STDOUT
