@@ -41,6 +41,6 @@ if [[ $failed -ne 0 ]]; then
 fi
 
 echo ""
-echo "All test repos passed."
+echo -e "\e[32mAll test repos passed.\e[0m"
 exit 0
 
