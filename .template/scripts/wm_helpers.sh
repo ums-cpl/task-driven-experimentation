@@ -9,8 +9,33 @@
 # Wrapper used for array execution (must re-inject env vars in cluster jobs).
 RUNNER="$RUN_TASKS_SCRIPT"
 
+# Longest common prefix string of all paths (character-wise), e.g. tasks/build/cuBLAS and
+# tasks/build/cuDNN -> tasks/build/cu. Args: nameref to indexed array of repo-relative paths.
+_wm_longest_common_string_prefix() {
+  local -n _wm_paths=$1
+  [[ ${#_wm_paths[@]} -eq 0 ]] && {
+    echo ""
+    return
+  }
+  [[ ${#_wm_paths[@]} -eq 1 ]] && {
+    echo "${_wm_paths[0]}"
+    return
+  }
+  local ref="${_wm_paths[0]}"
+  local i k len=${#ref}
+  for ((i = 1; i < ${#_wm_paths[@]}; i++)); do
+    local s="${_wm_paths[$i]}"
+    k=0
+    while [[ $k -lt $len && $k -lt ${#s} && "${ref:$k:1}" == "${s:$k:1}" ]]; do
+      ((k++)) || true
+    done
+    len=$k
+  done
+  echo "${ref:0:len}"
+}
+
 # Parse manifest for JOBs in the given stage that match our WM identity.
-# Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative).
+# Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative), WM_JOB_PATH_PREFIX (associative).
 wm_parse_manifest_for_stage() {
   local manifest="$1"
   local stage="$2"
@@ -18,10 +43,11 @@ wm_parse_manifest_for_stage() {
   [[ ! -f "$manifest" ]] && { echo "Error: Manifest not found: $manifest" >&2; exit 1; }
 
   WM_JOB_IDS=()
-  unset WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME 2>/dev/null || true
-  declare -gA WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME
+  unset WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME WM_JOB_PATH_RAW WM_JOB_PATH_PREFIX 2>/dev/null || true
+  declare -gA WM_JOB_TASK_COUNT WM_JOB_DEPENDS WM_WORKLOAD_NAME WM_JOB_PATH_RAW
   local current_job="" current_stage="" current_wm="" in_header=true
   declare -A job_id_seen=()
+  local task_path
 
   while IFS= read -r line; do
     if [[ "$in_header" == true ]]; then
@@ -56,6 +82,8 @@ wm_parse_manifest_for_stage() {
     if [[ "$line" =~ ^[0-9]+[[:space:]] ]]; then
       if [[ "$current_stage" == "$stage" ]] && [[ "$current_wm" == "$our_wm_abs" ]]; then
         WM_JOB_TASK_COUNT["$current_job"]=$((${WM_JOB_TASK_COUNT["$current_job"]:-0} + 1))
+        IFS=$'\t' read -r _ _ task_path _ <<< "$line" || true
+        [[ -n "${task_path:-}" ]] && WM_JOB_PATH_RAW["$current_job"]="${WM_JOB_PATH_RAW[$current_job]:+${WM_JOB_PATH_RAW[$current_job]}$'\n'}$task_path"
         if [[ -z "${job_id_seen[$current_job]:-}" ]]; then
           job_id_seen["$current_job"]=1
           WM_JOB_IDS+=("$current_job")
@@ -63,6 +91,25 @@ wm_parse_manifest_for_stage() {
       fi
     fi
   done < "$manifest"
+
+  unset WM_JOB_PATH_PREFIX
+  declare -gA WM_JOB_PATH_PREFIX
+  local j lines line common
+  local -a path_arr=()
+  for j in "${WM_JOB_IDS[@]}"; do
+    path_arr=()
+    lines="${WM_JOB_PATH_RAW[$j]:-}"
+    while IFS= read -r line || [[ -n "${line:-}" ]]; do
+      [[ -n "$line" ]] && path_arr+=("$line")
+    done <<< "$lines"
+    if [[ ${#path_arr[@]} -eq 0 ]]; then
+      WM_JOB_PATH_PREFIX["$j"]=""
+      continue
+    fi
+    common=$(_wm_longest_common_string_prefix path_arr)
+    WM_JOB_PATH_PREFIX["$j"]="$common"
+  done
+  unset WM_JOB_PATH_RAW
 }
 
 # Load log_dir/wm_job_ids into WM_ID_MAP (manifest_job_id -> wm_job_id).
@@ -119,7 +166,7 @@ _wm_slurm_default_sbatch() {
   echo "#SBATCH --mem=${SBATCH_MEM}"
   echo "#SBATCH --time=${SBATCH_TIME:-2:00:00}"
   echo "#SBATCH --kill-on-invalid-dep=yes"
-  echo "#SBATCH --job-name=${workload_name_val}_${jid}"
+  echo "#SBATCH --job-name=\"${workload_name_val} (Job ${jid})\""
   echo "#SBATCH --output=${LOG_DIR}/job${jid}_%a.log"
   [[ -n "$dep_line" ]] && echo "$dep_line"
   echo ""
@@ -169,6 +216,7 @@ wm_slurm_submit_stage() {
     gres_line=""
     [[ -n "${SBATCH_GRES:-}" ]] && gres_line="#SBATCH --gres=${SBATCH_GRES}"
     workload_name_val="${WM_WORKLOAD_NAME[$jid]:-run_tasks}"
+    [[ -n "${WM_JOB_PATH_PREFIX[$jid]:-}" ]] && workload_name_val="${workload_name_val} - ${WM_JOB_PATH_PREFIX[$jid]}*"
 
     tmp=$(mktemp)
     "$template_fn" "$jid" "$array_max" "$dep_line" "$gres_line" "$workload_name_val" > "$tmp"
