@@ -34,8 +34,61 @@ _wm_longest_common_string_prefix() {
   echo "${ref:0:len}"
 }
 
+# Manifest-wide common prefix across per-job task-path prefixes.
+# For each JOB in the manifest, first compute that job's own common task-path prefix.
+# Then compute the longest common prefix across all such job prefixes.
+_wm_manifest_global_job_prefix() {
+  local manifest="$1"
+  local current_job="" in_header=true task_path
+  local -A job_paths=()
+  local -a job_ids=()
+  declare -A job_seen=()
+  local line
+
+  while IFS= read -r line; do
+    if [[ "$in_header" == true ]]; then
+      [[ "$line" == "---" ]] && in_header=false
+      continue
+    fi
+    [[ "$line" == "---" ]] && continue
+    if [[ "$line" == $'JOB\t'* ]]; then
+      current_job=$(echo "$line" | cut -f2)
+      continue
+    fi
+    if [[ "$line" =~ ^[0-9]+[[:space:]] ]]; then
+      IFS=$'\t' read -r _ _ task_path _ <<< "$line" || true
+      if [[ -n "${current_job:-}" ]] && [[ -n "${task_path:-}" ]]; then
+        job_paths["$current_job"]="${job_paths[$current_job]:+${job_paths[$current_job]}$'\n'}$task_path"
+        if [[ -z "${job_seen[$current_job]:-}" ]]; then
+          job_seen["$current_job"]=1
+          job_ids+=("$current_job")
+        fi
+      fi
+    fi
+  done < "$manifest"
+
+  local jid lines path_line job_common
+  local -a path_arr=()
+  local -a job_prefixes=()
+  for jid in "${job_ids[@]}"; do
+    path_arr=()
+    lines="${job_paths[$jid]:-}"
+    while IFS= read -r path_line || [[ -n "${path_line:-}" ]]; do
+      [[ -n "$path_line" ]] && path_arr+=("$path_line")
+    done <<< "$lines"
+    [[ ${#path_arr[@]} -eq 0 ]] && continue
+    job_common=$(_wm_longest_common_string_prefix path_arr)
+    job_prefixes+=("$job_common")
+  done
+
+  _wm_longest_common_string_prefix job_prefixes
+}
+
 # Parse manifest for JOBs in the given stage that match our WM identity.
 # Sets: WM_JOB_IDS (indexed array), WM_JOB_TASK_COUNT, WM_JOB_DEPENDS, WM_WORKLOAD_NAME (associative), WM_JOB_PATH_PREFIX (associative).
+# WM_JOB_PATH_PREFIX is derived in two passes:
+# 1) longest common task-path prefix inside each job
+# 2) longest common prefix across all manifest job prefixes, stripped from each selected job prefix
 wm_parse_manifest_for_stage() {
   local manifest="$1"
   local stage="$2"
@@ -94,7 +147,7 @@ wm_parse_manifest_for_stage() {
 
   unset WM_JOB_PATH_PREFIX
   declare -gA WM_JOB_PATH_PREFIX
-  local j lines line common
+  local j lines line common global_common trimmed
   local -a path_arr=()
   for j in "${WM_JOB_IDS[@]}"; do
     path_arr=()
@@ -109,6 +162,15 @@ wm_parse_manifest_for_stage() {
     common=$(_wm_longest_common_string_prefix path_arr)
     WM_JOB_PATH_PREFIX["$j"]="$common"
   done
+
+  # Shorten displayed prefixes using a manifest-wide common job-prefix root.
+  global_common=$(_wm_manifest_global_job_prefix "$manifest")
+  if [[ -n "$global_common" ]]; then
+    for j in "${WM_JOB_IDS[@]}"; do
+      trimmed="${WM_JOB_PATH_PREFIX[$j]#"$global_common"}"
+      WM_JOB_PATH_PREFIX["$j"]="$trimmed"
+    done
+  fi
   unset WM_JOB_PATH_RAW
 }
 
@@ -216,7 +278,7 @@ wm_slurm_submit_stage() {
     gres_line=""
     [[ -n "${SBATCH_GRES:-}" ]] && gres_line="#SBATCH --gres=${SBATCH_GRES}"
     workload_name_val="${WM_WORKLOAD_NAME[$jid]:-run_tasks}"
-    [[ -n "${WM_JOB_PATH_PREFIX[$jid]:-}" ]] && workload_name_val="${workload_name_val} - ${WM_JOB_PATH_PREFIX[$jid]}*"
+    [[ -n "${WM_JOB_PATH_PREFIX[$jid]:-}" ]] && workload_name_val="${workload_name_val}: ...${WM_JOB_PATH_PREFIX[$jid]}..."
 
     tmp=$(mktemp)
     "$template_fn" "$jid" "$array_max" "$dep_line" "$gres_line" "$workload_name_val" > "$tmp"
