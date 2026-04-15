@@ -22,6 +22,34 @@ _abs_to_repo_rel() {
   fi
 }
 
+_longest_common_path_prefix() {
+  local -n _paths=$1
+  [[ ${#_paths[@]} -eq 0 ]] && {
+    echo ""
+    return
+  }
+  [[ ${#_paths[@]} -eq 1 ]] && {
+    echo "${_paths[0]}"
+    return
+  }
+  local ref="${_paths[0]}"
+  local i k len=${#ref}
+  for ((i = 1; i < ${#_paths[@]}; i++)); do
+    local s="${_paths[$i]}"
+    k=0
+    while [[ $k -lt $len && $k -lt ${#s} && "${ref:$k:1}" == "${s:$k:1}" ]]; do
+      ((k++)) || true
+    done
+    len=$k
+  done
+  local prefix="${ref:0:len}"
+  [[ "$prefix" == */ ]] && {
+    echo "$prefix"
+    return
+  }
+  [[ "$prefix" == */* ]] && echo "${prefix%/*}/" || echo ""
+}
+
 _resolve_container_manager_script_for_pair() {
   local task_dir="$1"
   local run_name="$2"
@@ -360,6 +388,43 @@ create_manifest() {
     stage_job_ids["$stage"]="${stage_job_ids[$stage]:+${stage_job_ids[$stage]},}$jid"
   done
 
+  # Compute display workload names at manifest generation time.
+  # For each emitted job, compute its common task-path prefix, then trim the
+  # manifest-wide common root and append the remainder to WORKLOAD_NAME.
+  declare -A key_to_job_prefix=()
+  declare -A key_to_workload_name=()
+  local -a all_job_prefixes=()
+  local -a path_arr=()
+  local global_prefix="" job_prefix trimmed_prefix suffix_display
+  for key in "${emitted_keys[@]}"; do
+    local -a indices=()
+    read -ra indices <<< "${group_pairs[$key]:-}"
+    path_arr=()
+    for idx in "${indices[@]}"; do
+      [[ "$SKIP_SUCCEEDED" == true ]] && is_task_run_succeeded "${_task_run_pairs[$idx]%%	*}" "${_task_run_pairs[$idx]#*	}" && continue
+      pair="${_task_run_pairs[$idx]}"
+      task_dir="${pair%%	*}"
+      path_arr+=("$(_abs_to_repo_rel "$task_dir")")
+    done
+    job_prefix=$(_longest_common_path_prefix path_arr)
+    key_to_job_prefix["$key"]="$job_prefix"
+    all_job_prefixes+=("$job_prefix")
+  done
+  global_prefix=$(_longest_common_path_prefix all_job_prefixes)
+  for key in "${emitted_keys[@]}"; do
+    wname="${key#*	}"
+    wname="${wname%%	*}"
+    key_to_workload_name["$key"]="$wname"
+    if [[ -n "$global_prefix" ]]; then
+      trimmed_prefix="${key_to_job_prefix[$key]#"$global_prefix"}"
+      if [[ -n "$trimmed_prefix" ]]; then
+        suffix_display="${trimmed_prefix#/}"
+        suffix_display="${suffix_display%/}"
+        [[ -n "$suffix_display" ]] && key_to_workload_name["$key"]="${wname}: .../${suffix_display}/..."
+      fi
+    fi
+  done
+
   # Invocation dir name: first non-empty WORKLOAD_NAME in manifest, else run_tasks
   job_safe="run_tasks"
   for key in "${emitted_keys[@]}"; do
@@ -387,8 +452,6 @@ create_manifest() {
       [[ "$block_started" == true ]] && echo "---"
       block_started=true
       stage="${key%%	*}"
-      wname="${key#*	}"
-      wname="${wname%%	*}"
       wm="${key#*	}"
       wm="${wm#*	}"
       job_id="${key_to_job_id[$key]}"
@@ -407,7 +470,7 @@ create_manifest() {
 
       echo "JOB	$job_id"
       echo "STAGE	$stage"
-      echo "WORKLOAD_NAME	$wname"
+      echo "WORKLOAD_NAME	${key_to_workload_name[$key]}"
       echo "WORKLOAD_MANAGER	$(_abs_to_repo_rel "$wm")"
       echo "DEPENDS	$dep_list"
       i=0
