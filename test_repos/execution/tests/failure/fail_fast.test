@@ -1,0 +1,8 @@
+# Tasks' run.sh should fail fast.
+RUN: tasks/fail_fast
+EXIT: 1
+FILE_EXISTS: $TASKS/fail_fast/assets/.run_failed
+FILE_NOT_EXISTS: $TASKS/fail_fast/assets/.run_success
+FILE_CONTENT: $TASKS/fail_fast/assets/.run_output.log
+first
+END_FILE_CONTENT

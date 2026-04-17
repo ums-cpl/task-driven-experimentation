@@ -354,7 +354,7 @@ $overrides_meta  echo ""
 } > "\$RUN_FOLDER/.run_metadata"
 date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_begin"
 set +e
-( . "$task_dir/run.sh" )
+( set -e; . "$task_dir/run.sh" )
 task_exit=\$?
 set -e
 if [[ \$task_exit -eq 0 ]]; then
