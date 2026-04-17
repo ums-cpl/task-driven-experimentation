@@ -117,7 +117,52 @@ build_task_run_pairs() {
   for spec in "${TASK_SPECS[@]}"; do
     [[ -z "$spec" ]] && ((spec_idx++)) || true
     [[ -z "$spec" ]] && continue
+    local spec_action="${TASK_SPEC_ACTIONS[$spec_idx]:-include}"
     local override_tsv="${TASK_SPEC_OVERRIDES[$spec_idx]:-}"
+    if [[ "$spec_action" == "exclude" ]]; then
+      local parsed
+      set -f
+      parsed=($(parse_task_spec "$spec"))
+      set +f
+      local task_path="${parsed[0]}"
+      local run_spec="${parsed[1]:-}"
+      declare -A excluded_tasks=()
+      declare -A excluded_pairs=()
+      local task_dir
+      while IFS= read -r task_dir; do
+        [[ -z "$task_dir" ]] && continue
+        excluded_tasks["$task_dir"]=1
+        if [[ -n "$run_spec" ]]; then
+          local -a excluded_runs=()
+          if [[ "$CLEAN" == true ]]; then
+            expand_run_spec_for_clean "$task_dir" "$run_spec" excluded_runs
+          else
+            expand_run_spec "$run_spec" excluded_runs
+          fi
+          local r
+          for r in "${excluded_runs[@]}"; do
+            excluded_pairs["$task_dir	$r"]=1
+          done
+        fi
+      done < <(resolve_arg "$task_path")
+
+      local -a kept_pairs=()
+      local pair_override
+      for pair_override in "${pairs_with_override[@]}"; do
+        local t="${pair_override%%	*}"
+        local rest="${pair_override#*	}"
+        local r="${rest%%	*}"
+        if [[ -z "$run_spec" ]]; then
+          [[ -n "${excluded_tasks[$t]+x}" ]] && continue
+        else
+          [[ -n "${excluded_pairs["$t	$r"]+x}" ]] && continue
+        fi
+        kept_pairs+=("$pair_override")
+      done
+      pairs_with_override=("${kept_pairs[@]}")
+      ((spec_idx++)) || true
+      continue
+    fi
     ENV_OVERRIDES=()
     if [[ -n "$override_tsv" ]]; then
       IFS=$'\t' read -ra ENV_OVERRIDES <<< "$override_tsv"

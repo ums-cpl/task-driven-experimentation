@@ -17,6 +17,7 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
 Options:
   --dry-run              Create manifest without running (no workload manager invoke)
   --clean                Remove output folders for specified tasks, do not run
+  --exclude TASK         Exclude previously selected task runs
   --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
   --skip-verify-def      Skip verification that container image matches definition file
   --include-disabled     Run runs even if RUN_DISABLED is set in run_meta.sh
@@ -54,6 +55,23 @@ parse_args() {
         ;;
       --clean)
         CLEAN=true
+        shift
+        ;;
+      --exclude)
+        if [[ $# -lt 2 ]]; then
+          echo "Error: --exclude requires a value" >&2
+          echo "Use --help for usage." >&2
+          exit 1
+        fi
+        TASK_SPECS+=("$2")
+        TASK_SPEC_OVERRIDES+=("")
+        TASK_SPEC_ACTIONS+=("exclude")
+        shift 2
+        ;;
+      --exclude=*)
+        TASK_SPECS+=("${1#--exclude=}")
+        TASK_SPEC_OVERRIDES+=("")
+        TASK_SPEC_ACTIONS+=("exclude")
         shift
         ;;
       --array-manifest=*)
@@ -111,6 +129,7 @@ parse_args() {
         ;;
       *)
         TASK_SPECS+=("$1")
+        TASK_SPEC_ACTIONS+=("include")
         # Snapshot current overrides for this task spec (tab-separated; order preserved for later "last per key")
         if [[ ${#ENV_OVERRIDES[@]} -gt 0 ]]; then
           TASK_SPEC_OVERRIDES+=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]}")")

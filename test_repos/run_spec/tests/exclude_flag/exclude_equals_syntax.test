@@ -1,0 +1,15 @@
+# --exclude=VALUE form is accepted and applies to prior specs
+RUN: --dry-run tasks/with_runs --exclude=tasks/with_runs:run-1
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	run-2	tasks/with_runs
+1	run-3	tasks/with_runs
+END_STDOUT

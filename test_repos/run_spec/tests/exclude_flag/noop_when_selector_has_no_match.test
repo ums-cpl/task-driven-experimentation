@@ -1,0 +1,16 @@
+# Excluding a non-matching selector is a no-op
+RUN: --dry-run tasks/with_runs --exclude tasks/with_runs:run-9
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	run-1	tasks/with_runs
+1	run-2	tasks/with_runs
+2	run-3	tasks/with_runs
+END_STDOUT

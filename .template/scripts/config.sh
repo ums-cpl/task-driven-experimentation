@@ -4,6 +4,7 @@
 
 declare -a TASK_SPECS=()
 declare -a TASK_SPEC_OVERRIDES=()
+declare -a TASK_SPEC_ACTIONS=()
 declare -a TASK_RUN_PAIRS=()
 declare -a TASK_RUN_PAIR_OVERRIDES=()
 declare -a TASK_RUN_PAIR_OCC_KEYS=()

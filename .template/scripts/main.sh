@@ -27,6 +27,7 @@ main() {
     if [[ "$STATUS_MODE" == true && ${#TASK_SPECS[@]} -eq 0 ]]; then
       TASK_SPECS=("$TASKS")
       TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
+      TASK_SPEC_ACTIONS=("include")
     fi
     if [[ ${#TASK_SPECS[@]} -gt 0 ]]; then
       echo "Discovering task runs..."
@@ -49,6 +50,7 @@ main() {
   if [[ ${#TASK_SPECS[@]} -eq 0 ]]; then
     TASK_SPECS=("$TASKS")
     TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
+    TASK_SPEC_ACTIONS=("include")
   fi
   ORIGINAL_TASK_SPEC_COUNT=${#TASK_SPECS[@]}
 
@@ -108,6 +110,7 @@ main() {
         if [[ "$found" != true ]]; then
           TASK_SPECS+=("$spec")
           TASK_SPEC_OVERRIDES+=("")
+          TASK_SPEC_ACTIONS+=("include")
           added=1
         fi
       done
