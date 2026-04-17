@@ -3,6 +3,7 @@
 RUN: --dry-run assets
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 END_STDOUT

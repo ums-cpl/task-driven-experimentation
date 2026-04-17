@@ -2,6 +2,7 @@
 RUN: --dry-run tasks/does_not_exist
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 END_STDOUT

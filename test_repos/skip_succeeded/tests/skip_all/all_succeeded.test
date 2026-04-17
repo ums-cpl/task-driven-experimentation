@@ -2,5 +2,6 @@
 RUN: --skip-succeeded tasks/done_task
 EXIT: 0
 STDOUT:
+Discovering task runs...
 All tasks already succeeded, nothing to submit.
 END_STDOUT

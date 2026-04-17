@@ -2,6 +2,7 @@
 RUN: --dry-run "tasks/a:{r1,r2}"
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 JOB	0

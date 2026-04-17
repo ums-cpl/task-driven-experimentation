@@ -2,6 +2,7 @@
 RUN: --dry-run tasks/disabled_task tasks/enabled_task
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 JOB	0

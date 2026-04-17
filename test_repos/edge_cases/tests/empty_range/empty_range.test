@@ -2,6 +2,7 @@
 RUN: --dry-run "tasks/simple:{5:1}"
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 END_STDOUT

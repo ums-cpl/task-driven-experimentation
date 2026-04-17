@@ -29,6 +29,7 @@ main() {
       TASK_SPEC_OVERRIDES=("$(IFS=$'\t'; echo "${ENV_OVERRIDES[*]:-}")")
     fi
     if [[ ${#TASK_SPECS[@]} -gt 0 ]]; then
+      echo "Discovering task runs..."
       build_task_run_pairs
       for pair in "${TASK_RUN_PAIRS[@]}"; do
         task_dir="${pair%%	*}"
@@ -51,6 +52,7 @@ main() {
   fi
   ORIGINAL_TASK_SPEC_COUNT=${#TASK_SPECS[@]}
 
+  echo "Discovering task runs..."
   build_task_run_pairs
 
   if [[ "$CLEAN" == true ]]; then

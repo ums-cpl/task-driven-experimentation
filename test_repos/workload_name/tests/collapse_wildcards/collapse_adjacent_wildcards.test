@@ -2,6 +2,7 @@
 RUN: --dry-run tasks/collapse/a/x/leaf tasks/collapse/b/y/leaf
 EXIT: 0
 STDOUT:
+Discovering task runs...
 SKIP_VERIFY_DEF=false
 ---
 JOB	0
