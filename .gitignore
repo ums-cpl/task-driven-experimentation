@@ -1,5 +1,6 @@
 *.sif
 workload_logs/
 *.failed
+*.workdir/
 *.actual.*
 .scratch/
