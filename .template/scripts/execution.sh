@@ -272,6 +272,7 @@ export WORKLOAD_MANAGERS="$WORKLOAD_MANAGERS"
 export CONTAINER_MANAGERS="$CONTAINER_MANAGERS"
 export CONTAINER_MANAGER="$container_manager_script"
 export REPOSITORY_ROOT="$REPOSITORY_ROOT"
+export TASK_FOLDER="$task_dir"
 export RUN_FOLDER="$run_folder"
 
 # Remove all files in run folder except this script
@@ -282,6 +283,7 @@ $source_cmds_meta
 
 # Source run_meta.sh chain and export RUN_* as CONTAINER* for container manager scripts
 export RUN_ID="$run_name"
+export RUN_FOLDER="\$TASK_FOLDER/\$RUN_ID"
 $source_cmds_run_meta
 export CONTAINER="\${RUN_CONTAINER:-}"
 export CONTAINER_DEF="\${RUN_CONTAINER_DEF:-}"

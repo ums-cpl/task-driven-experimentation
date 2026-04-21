@@ -1,0 +1,7 @@
+# TASK_FOLDER and RUN_FOLDER should be available while sourcing run.sh.
+RUN: tasks/path_vars
+EXIT: 0
+FILE_EXISTS: $TASKS/path_vars/vars-ok/.run_success
+FILE_CONTENT: $TASKS/path_vars/vars-ok/.run_output.log
+path vars available in run.sh
+END_FILE_CONTENT

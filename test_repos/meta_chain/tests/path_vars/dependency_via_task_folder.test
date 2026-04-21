@@ -1,0 +1,21 @@
+# A run-specific dependency can be expressed with $TASK_FOLDER instead of hard-coded task path.
+RUN: --dry-run --include-deps tasks/path_vars_dep
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: path_vars_dep
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	first	tasks/path_vars_dep
+---
+JOB	1
+STAGE	1
+WORKLOAD_NAME	run_tasks: path_vars_dep
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	0
+0	second	tasks/path_vars_dep
+END_STDOUT

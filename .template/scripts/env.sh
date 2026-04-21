@@ -61,6 +61,7 @@ resolve_task_var() {
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    export TASK_FOLDER=\"$task_dir\"
     $source_cmds
     echo -n \"\${$var_name:-}\"
   " 2>/dev/null || true
@@ -88,6 +89,7 @@ resolve_task_var_isset() {
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    export TASK_FOLDER=\"$task_dir\"
     $source_cmds
     if [[ -n \"\${$var_name+x}\" ]]; then echo -n 1; else echo -n 0; fi
   " 2>/dev/null || true
@@ -121,7 +123,9 @@ resolve_run_var() {
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    export TASK_FOLDER=\"$task_dir\"
     export RUN_ID=\"$run_name\"
+    export RUN_FOLDER=\"\$TASK_FOLDER/\$RUN_ID\"
     $source_cmds_meta
     $source_cmds_run_meta
     echo -n \"\${$var_name:-}\"
@@ -155,7 +159,9 @@ resolve_run_var_isset() {
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    export TASK_FOLDER=\"$task_dir\"
     export RUN_ID=\"$run_name\"
+    export RUN_FOLDER=\"\$TASK_FOLDER/\$RUN_ID\"
     $source_cmds_meta
     $source_cmds_run_meta
     if [[ -n \"\${$var_name+x}\" ]]; then echo -n 1; else echo -n 0; fi
@@ -199,8 +205,11 @@ get_task_dependencies() {
     export TASKS=\"$TASKS\"
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
+    export INCLUDE_DEPS=\"$INCLUDE_DEPS\"
+    export TASK_FOLDER=\"$task_dir\"
     $source_cmds_meta
     export RUN_ID=\"$run_name\"
+    export RUN_FOLDER=\"\$TASK_FOLDER/\$RUN_ID\"
     $source_cmds_run_meta
     RUN_DEPENDENCIES=()
     $source_cmds_deps
