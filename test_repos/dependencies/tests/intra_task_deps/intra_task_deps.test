@@ -1,0 +1,21 @@
+# Intra-task run dependency should resolve.
+RUN: --dry-run --include-deps tasks/intra_task_deps
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	first	tasks/intra_task_deps
+---
+JOB	1
+STAGE	1
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	0
+0	second	tasks/intra_task_deps
+END_STDOUT

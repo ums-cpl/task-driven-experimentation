@@ -123,6 +123,7 @@ compute_stages() {
   declare -A invocation_pair_set
   declare -A invocation_task_set
   declare -A task_dir_to_last_occ
+  declare -A pair_to_last_occ
   local i pair td rn occ_key
   for ((i=0; i<${#_task_run_pairs_ref[@]}; i++)); do
     pair="${_task_run_pairs_ref[$i]}"
@@ -132,6 +133,7 @@ compute_stages() {
     invocation_pair_set["$td	$rn"]=1
     invocation_task_set["$td"]=1
     task_dir_to_last_occ["$td"]="$occ_key"
+    pair_to_last_occ["$td	$rn"]="$occ_key"
   done
 
   declare -A deps
@@ -195,11 +197,40 @@ compute_stages() {
           invocation_pair_set invocation_task_set _task_run_pairs_ref \
           missing_deps missing_count _task_dep_checks
         [[ -z "${invocation_task_set["$r"]+x}" ]] && continue
-        local dep_occ="${task_dir_to_last_occ["$r"]}"
-        local edge_key="$occ_key	$dep_occ"
-        if [[ -z "${dep_edges_added["$edge_key"]+x}" ]] && [[ "$occ_key" != "$dep_occ" ]]; then
-          deps["$occ_key"]+="${deps["$occ_key"]:+$'\n'}$dep_occ"
-          dep_edges_added["$edge_key"]=1
+        if [[ -z "$dep_run_spec" ]]; then
+          local dep_occ="${task_dir_to_last_occ["$r"]}"
+          local edge_key="$occ_key	$dep_occ"
+          if [[ -z "${dep_edges_added["$edge_key"]+x}" ]] && [[ "$occ_key" != "$dep_occ" ]]; then
+            deps["$occ_key"]+="${deps["$occ_key"]:+$'\n'}$dep_occ"
+            dep_edges_added["$edge_key"]=1
+          fi
+        else
+          local -a dep_runs=()
+          if _has_wildcard_outside_braces "$dep_run_spec"; then
+            expand_run_spec_for_clean "$r" "$dep_run_spec" dep_runs
+            declare -A _dep_run_seen=()
+            local _p _td _rn
+            for _p in "${_task_run_pairs_ref[@]}"; do
+              _td="${_p%%	*}"
+              _rn="${_p#*	}"
+              if [[ "$_td" == "$r" ]] && [[ "$_rn" == $dep_run_spec ]] && [[ -z "${_dep_run_seen["$_rn"]+x}" ]]; then
+                dep_runs+=("$_rn")
+                _dep_run_seen["$_rn"]=1
+              fi
+            done
+          else
+            expand_run_spec "$dep_run_spec" dep_runs
+          fi
+          local dep_rn dep_occ
+          for dep_rn in "${dep_runs[@]}"; do
+            dep_occ="${pair_to_last_occ["$r	$dep_rn"]:-}"
+            [[ -z "$dep_occ" ]] && continue
+            local edge_key="$occ_key	$dep_occ"
+            if [[ -z "${dep_edges_added["$edge_key"]+x}" ]] && [[ "$occ_key" != "$dep_occ" ]]; then
+              deps["$occ_key"]+="${deps["$occ_key"]:+$'\n'}$dep_occ"
+              dep_edges_added["$edge_key"]=1
+            fi
+          done
         fi
       done
     done

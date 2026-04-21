@@ -101,7 +101,7 @@ reduce_override_to_final_per_key() {
 }
 
 # Build TASK_RUN_PAIRS, TASK_RUN_PAIR_OVERRIDES, TASK_RUN_PAIR_OCC_KEYS, TASK_OCC_KEYS, TASKS_UNIQUE from TASK_SPECS.
-# Overrides are per-spec (TASK_SPEC_OVERRIDES). Same (task_dir, override_snapshot) = same occurrence group (OCC:N).
+# Overrides are per-spec (TASK_SPEC_OVERRIDES). Same (task_dir, run_name, override_snapshot) = same occurrence group (OCC:N).
 # Pairs are emitted in spec order; within each spec, run-first task-second order. Duplicate (task_dir, run_name) across specs allowed.
 build_task_run_pairs() {
   TASK_RUN_PAIRS=()
@@ -109,7 +109,7 @@ build_task_run_pairs() {
   TASK_RUN_PAIR_OCC_KEYS=()
   TASK_OCC_KEYS=()
   TASKS_UNIQUE=()
-  declare -A occ_key_by_task_override=()
+  declare -A occ_key_by_task_run_override=()
   local occ_counter=0
   local -a pairs_with_override=()
   local spec_idx=0
@@ -286,13 +286,13 @@ build_task_run_pairs() {
     fi
 
     local occ_key
-    if [[ -z "${occ_key_by_task_override["$task_dir	$ov_tsv"]+x}" ]]; then
+    if [[ -z "${occ_key_by_task_run_override["$task_dir	$run_name	$ov_tsv"]+x}" ]]; then
       occ_key="$task_dir	OCC:$occ_counter"
-      occ_key_by_task_override["$task_dir	$ov_tsv"]="$occ_key"
+      occ_key_by_task_run_override["$task_dir	$run_name	$ov_tsv"]="$occ_key"
       TASK_OCC_KEYS+=("$occ_key")
       ((occ_counter++)) || true
     else
-      occ_key="${occ_key_by_task_override["$task_dir	$ov_tsv"]}"
+      occ_key="${occ_key_by_task_run_override["$task_dir	$run_name	$ov_tsv"]}"
     fi
 
     local pair_ov_tsv
