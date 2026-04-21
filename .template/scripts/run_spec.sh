@@ -90,15 +90,21 @@ _expand_one_run_spec() {
         done
       fi
     else
-      local old_ifs="$IFS"
-      IFS=,
-      local v
-      for v in $content; do
-        v="${v#"${v%%[![:space:]]*}"}"
-        v="${v%"${v##*[![:space:]]}"}"
-        [[ -n "$v" ]] && vals+=("$v")
+      # Split list content on commas while preserving empty entries (e.g. "{,c}").
+      local remainder="$content"
+      local raw_value="" trimmed_value="" done_split=0
+      while [[ $done_split -eq 0 ]]; do
+        if [[ "$remainder" == *,* ]]; then
+          raw_value="${remainder%%,*}"
+          remainder="${remainder#*,}"
+        else
+          raw_value="$remainder"
+          done_split=1
+        fi
+        trimmed_value="${raw_value#"${raw_value%%[![:space:]]*}"}"
+        trimmed_value="${trimmed_value%"${trimmed_value##*[![:space:]]}"}"
+        vals+=("$trimmed_value")
       done
-      IFS="$old_ifs"
     fi
     local IFS="$sep"
     pattern_values+=("${vals[*]}")
@@ -133,7 +139,8 @@ _expand_one_run_spec() {
       printf -v ph '%b' "\\x$(printf '%02x' $((p + 1)))"
       run_name="${run_name//$ph/$val}"
     done
-    _out+=("$run_name")
+    # Allow empty list entries, but do not emit a fully empty run name.
+    [[ -n "$run_name" ]] && _out+=("$run_name")
 
     # Increment (last index varies fastest).
     local carry=1
