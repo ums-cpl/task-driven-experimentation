@@ -206,6 +206,7 @@ get_task_dependencies() {
     export WORKLOAD_MANAGERS=\"$WORKLOAD_MANAGERS\"
     export CONTAINER_MANAGERS=\"$CONTAINER_MANAGERS\"
     export INCLUDE_DEPS=\"$INCLUDE_DEPS\"
+    export IGNORE_DEPS=\"$IGNORE_DEPS\"
     export TASK_FOLDER=\"$task_dir\"
     $source_cmds_meta
     export RUN_ID=\"$run_name\"

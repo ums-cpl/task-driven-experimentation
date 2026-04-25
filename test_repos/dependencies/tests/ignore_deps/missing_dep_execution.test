@@ -1,0 +1,5 @@
+# --ignore-deps runs selected task even when deps are missing
+RUN: --ignore-deps tasks/middle
+EXIT: 0
+FILE_EXISTS: $TASKS/middle/assets/.run_success
+FILE_NOT_EXISTS: $TASKS/base/assets/.run_success

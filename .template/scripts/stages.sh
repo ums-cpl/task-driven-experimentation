@@ -15,6 +15,8 @@ validate_dependency() {
   local -n _missing_count_ref=$8
   local -n _dep_checks=$9
   local task_dir="${occ_key%	OCC:*}"
+  local dep_in_invocation=false
+  [[ -n "${_inv_task_set["$dep_task_dir"]+x}" ]] && dep_in_invocation=true
 
   if [[ -z "$dep_run_spec" ]]; then
     local -a disk_runs=()
@@ -41,7 +43,9 @@ validate_dependency() {
     local resolved_ok=false
     [[ "$all_disk_ok" == true ]] && [[ "$has_at_least_one" == true ]] && resolved_ok=true
 
-    if [[ "$INCLUDE_DEPS" == true ]]; then
+    if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
+      :
+    elif [[ "$INCLUDE_DEPS" == true ]]; then
       if [[ -z "${_inv_task_set["$dep_task_dir"]+x}" ]]; then
         local rel_task="${task_dir#$TASKS/}"
         local rel_dep="${dep_task_dir#$TASKS/}"
@@ -56,7 +60,9 @@ validate_dependency() {
         _missing_count_ref=$((_missing_count_ref + 1))
       fi
     fi
-    _dep_checks["$occ_key"]+="ALL	$dep_task_dir"$'\n'
+    if [[ "$dep_in_invocation" == true ]]; then
+      _dep_checks["$occ_key"]+="ALL	$dep_task_dir"$'\n'
+    fi
 
   elif _has_wildcard_outside_braces "$dep_run_spec"; then
     local -a matched_runs=()
@@ -75,6 +81,9 @@ validate_dependency() {
       fi
     done
     if [[ ${#matched_runs[@]} -eq 0 ]]; then
+      if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
+        return
+      fi
       local rel_task="${task_dir#$TASKS/}"
       local rel_dep="${dep_task_dir#$TASKS/}"
       local dep_label="tasks/$rel_dep:$dep_run_spec (no matching run folders on disk)"
@@ -82,13 +91,17 @@ validate_dependency() {
       _missing_count_ref=$((_missing_count_ref + 1))
     else
       for rn in "${matched_runs[@]}"; do
-        if [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
+        if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
+          :
+        elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
           local rel_task="${task_dir#$TASKS/}"
           local rel_dep="${dep_task_dir#$TASKS/}"
           _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
           _missing_count_ref=$((_missing_count_ref + 1))
         fi
-        _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
+        if [[ "$dep_in_invocation" == true ]]; then
+          _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
+        fi
       done
     fi
 
@@ -96,13 +109,17 @@ validate_dependency() {
     local -a dep_runs=()
     expand_run_spec "$dep_run_spec" dep_runs
     for rn in "${dep_runs[@]}"; do
-      if [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
+      if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
+        :
+      elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
         local rel_task="${task_dir#$TASKS/}"
         local rel_dep="${dep_task_dir#$TASKS/}"
         _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
         _missing_count_ref=$((_missing_count_ref + 1))
       fi
-      _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
+      if [[ "$dep_in_invocation" == true ]]; then
+        _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
+      fi
     done
   fi
 }

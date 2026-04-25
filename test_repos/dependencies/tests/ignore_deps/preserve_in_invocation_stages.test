@@ -1,0 +1,21 @@
+# --ignore-deps keeps dependency staging for selected tasks, ignores missing external deps
+RUN: --dry-run --ignore-deps tasks/top tasks/middle
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: middle
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/middle
+---
+JOB	1
+STAGE	1
+WORKLOAD_NAME	run_tasks: top
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	0
+0	assets	tasks/top
+END_STDOUT
