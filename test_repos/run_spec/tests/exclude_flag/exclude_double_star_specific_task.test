@@ -1,0 +1,14 @@
+# Double-star exclude should match across path segments for a specific task
+RUN: --dry-run tasks/simple tasks/with_runs --exclude "tasks/**/with_runs"
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/simple
+END_STDOUT

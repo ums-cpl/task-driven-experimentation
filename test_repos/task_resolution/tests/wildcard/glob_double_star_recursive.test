@@ -1,0 +1,17 @@
+# Double-star should recursively match task directories with run.sh
+RUN: --dry-run "tasks/**"
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: tasks/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/deep/a/b
+1	assets	tasks/leaf
+2	assets	tasks/parent/child_a
+3	assets	tasks/parent/child_b
+END_STDOUT

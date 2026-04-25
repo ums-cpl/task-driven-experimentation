@@ -18,7 +18,7 @@ resolve_arg() {
   tasks_root_abs="$(cd "$TASKS" 2>/dev/null && pwd)" || { echo "Error: TASKS not found: $TASKS" >&2; exit 1; }
 
   # Handle wildcards: expand glob and filter to dirs with run.sh
-    # (* and ? = standard glob; !( = extglob exclusion)
+    # (* and ? = standard glob; ** = recursive globstar; !( = extglob exclusion)
     # Note: arg comes from user-controlled run_deps.sh; glob chars (*?!) are safe.
     if [[ "$arg" == *"*"* || "$arg" == *"?"* || "$arg" == *"!("* ]]; then
     # Reject shell metacharacters that could enable injection in eval. Allow () for extglob !(pattern).
@@ -28,9 +28,14 @@ resolve_arg() {
         exit 1
         ;;
     esac
-    shopt -s extglob  # enable !(pattern) for exclusion
+    local extglob_was_set=0 globstar_was_set=0
+    shopt -q extglob && extglob_was_set=1
+    shopt -q globstar && globstar_was_set=1
+    shopt -s extglob globstar  # enable !(pattern) and ** recursive matching
     local expanded path abs
     expanded=($(eval "ls -d $arg" 2>/dev/null || true))
+    if [[ "$extglob_was_set" -eq 0 ]]; then shopt -u extglob; fi
+    if [[ "$globstar_was_set" -eq 0 ]]; then shopt -u globstar; fi
     for path in "${expanded[@]}"; do
       [[ -d "$path" && -f "$path/run.sh" ]] || continue
       is_run_folder "$path" && continue

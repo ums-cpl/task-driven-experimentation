@@ -8,7 +8,7 @@ Usage: $0 [OPTIONS] [KEY=VALUE ...] [TASK [TASK ...]]
 Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
   - Task directory: path to dir containing run.sh (e.g. tasks/.../task1)
   - Parent directory: recursively finds all descendant dirs with run.sh
-  - Wildcard: expands to matching dirs (e.g. tasks/.../*). Use !(pattern) to exclude (e.g. tasks/.../*/!(data))
+  - Wildcard: expands to matching dirs (e.g. tasks/.../*, tasks/**). Use !(pattern) to exclude (e.g. tasks/.../*/!(data))
 
   Optional suffix :TASK_RUNS sets run(s). Examples: :local, :run-{1:10}, :run* (clean only, wildcard).
   Without suffix: default TASK_RUNS "assets" for execute; cleans all runs with --clean.

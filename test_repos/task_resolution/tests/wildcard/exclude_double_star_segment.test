@@ -1,0 +1,15 @@
+# Double-star in --exclude should match across multiple path segments
+RUN: --dry-run tasks/deep tasks/parent --exclude "tasks/**/b"
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: parent/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/parent/child_b
+1	assets	tasks/parent/child_a
+END_STDOUT

@@ -1,0 +1,8 @@
+# Double-star exclude should remove all previously selected tasks recursively
+RUN: --dry-run tasks/simple tasks/with_runs --exclude "tasks/**"
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+END_STDOUT

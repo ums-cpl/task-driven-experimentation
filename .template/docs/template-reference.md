@@ -18,7 +18,7 @@ Used to run tasks.
 
 - A task directory (path to a dir containing `run.sh`)
 - A parent directory (recursively finds all descendant dirs with `run.sh`)
-- A wildcard (e.g. `tasks/.../*`; use `"!(pattern)"` to exclude)
+- A wildcard (e.g. `tasks/.../*`, `tasks/**`; use `"!(pattern)"` to exclude)
 
 Optional suffix `:TASK_RUNS` overrides the task's `TASK_RUNS` (set in `task_meta.sh`). Examples: `:local`, `:run-{1:10}`, `:run*` (clean only, wildcard). Without suffix: uses the task's `TASK_RUNS`; cleans all runs with `--clean`. TASK_RUNS uses the same format for execute, clean, and dependency specs: comma-separated list of run spec items; each item is a literal with optional `{a,b,c}` (list) and `{start:end}` (range) patterns; multiple patterns expand to cartesian product (last varies fastest). Wildcards `*` and `?` outside `{...}` are supported for clean and dependency specs.
 
