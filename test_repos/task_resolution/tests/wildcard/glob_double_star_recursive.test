@@ -11,7 +11,15 @@ WORKLOAD_NAME	run_tasks: tasks/*
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
 0	assets	tasks/deep/a/b
-1	assets	tasks/leaf
-2	assets	tasks/parent/child_a
-3	assets	tasks/parent/child_b
+1	assets	tasks/folder1/my_tasks
+2	assets	tasks/folder1/my_tasks/nested
+3	assets	tasks/folder2/folder3/my_tasks
+4	assets	tasks/folder4/my_tasks/folder5
+5	assets	tasks/folder4/other
+6	assets	tasks/leaf
+7	assets	tasks/literal_exclude_root
+8	assets	tasks/literal_exclude_root/nested
+9	assets	tasks/literal_exclude_sibling
+10	assets	tasks/parent/child_a
+11	assets	tasks/parent/child_b
 END_STDOUT

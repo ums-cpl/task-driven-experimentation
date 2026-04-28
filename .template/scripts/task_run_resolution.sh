@@ -72,6 +72,43 @@ resolve_arg() {
   printf '%s\n' "${resolved[@]}"
 }
 
+# Resolves a single --exclude path argument to absolute task directory paths.
+# For wildcard args, this treats matched directories as subtree anchors, so
+# patterns like tasks/**/my_tasks can exclude descendant tasks even when the
+# matched directory itself has no run.sh.
+resolve_exclude_arg() {
+  local arg="$1"
+
+  # Non-wildcard path behavior is identical to normal resolution.
+  if [[ "$arg" != *"*"* && "$arg" != *"?"* && "$arg" != *"!("* ]]; then
+    resolve_arg "$arg"
+    return
+  fi
+
+  # Reject shell metacharacters that could enable injection in eval.
+  case "$arg" in
+    *';'*|*'|'*|*'&'*|*'`'*|*'$'*)
+      echo "Error: Path contains invalid characters: $arg" >&2
+      exit 1
+      ;;
+  esac
+
+  local extglob_was_set=0 globstar_was_set=0
+  shopt -q extglob && extglob_was_set=1
+  shopt -q globstar && globstar_was_set=1
+  shopt -s extglob globstar
+  local expanded=()
+  expanded=($(eval "ls -d $arg" 2>/dev/null || true))
+  if [[ "$extglob_was_set" -eq 0 ]]; then shopt -u extglob; fi
+  if [[ "$globstar_was_set" -eq 0 ]]; then shopt -u globstar; fi
+
+  local path
+  for path in "${expanded[@]}"; do
+    [[ -d "$path" ]] || continue
+    resolve_arg "$path"
+  done
+}
+
 # Reduce tab-separated KEY=VALUE list to final value per key (last occurrence wins).
 # Output: tab-separated KEY=VALUE (order = last occurrence of each key).
 reduce_override_to_final_per_key() {
@@ -149,7 +186,7 @@ build_task_run_pairs() {
             excluded_pairs["$task_dir	$r"]=1
           done
         fi
-      done < <(resolve_arg "$task_path")
+      done < <(resolve_exclude_arg "$task_path")
 
       local -a kept_pairs=()
       local pair_override
@@ -158,7 +195,12 @@ build_task_run_pairs() {
         local rest="${pair_override#*	}"
         local r="${rest%%	*}"
         if [[ -z "$run_spec" ]]; then
-          [[ -n "${excluded_tasks[$t]+x}" ]] && continue
+          local excluded_root
+          for excluded_root in "${!excluded_tasks[@]}"; do
+            if [[ "$t" == "$excluded_root" || "$t" == "$excluded_root"/* ]]; then
+              continue 2
+            fi
+          done
         else
           [[ -n "${excluded_pairs["$t	$r"]+x}" ]] && continue
         fi

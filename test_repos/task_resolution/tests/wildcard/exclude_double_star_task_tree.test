@@ -1,0 +1,15 @@
+# Double-star exclude should remove matched task trees and all descendants
+RUN: --dry-run tasks/folder1 tasks/folder2 tasks/folder4 --exclude "tasks/**/my_tasks"
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/folder4/other
+END_STDOUT
+
