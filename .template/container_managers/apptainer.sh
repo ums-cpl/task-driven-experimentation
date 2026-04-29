@@ -35,8 +35,14 @@ container_exec_snippet() {
   local repo_root="${REPOSITORY_ROOT:?}"
   echo '# If CONTAINER set and not already inside container, re-exec inside container'
   echo 'if [[ -z "${CONTAINER_INNER:-}" ]] && [[ -n "${CONTAINER:-}" ]]; then'
+  echo '  userns_flag=""'
   echo '  gpu_flag=""'
   echo '  [[ -n "${CONTAINER_GPU:-}" ]] && gpu_flag="--nv "'
-  echo "  exec apptainer exec \${CONTAINER_FLAGS:-} \$gpu_flag -B \"$repo_root:$repo_root\" \"\$CONTAINER\" env CONTAINER_INNER=1 bash \"\$(cd \"\$(dirname \"\$0\")\" && pwd)/.run_script.sh\""
+  echo "  if ! apptainer exec \${CONTAINER_FLAGS:-} \$gpu_flag -B \"$repo_root:$repo_root\" \"\$CONTAINER\" true >/dev/null 2>&1; then"
+  echo "    if apptainer exec --userns \${CONTAINER_FLAGS:-} \$gpu_flag -B \"$repo_root:$repo_root\" \"\$CONTAINER\" true >/dev/null 2>&1; then"
+  echo '        userns_flag="--userns "'
+  echo '    fi'
+  echo '  fi'
+  echo "  exec apptainer exec \$userns_flag \${CONTAINER_FLAGS:-} \$gpu_flag -B \"$repo_root:$repo_root\" \"\$CONTAINER\" env CONTAINER_INNER=1 bash \"\$(cd \"\$(dirname \"\$0\")\" && pwd)/.run_script.sh\""
   echo 'fi'
 }
