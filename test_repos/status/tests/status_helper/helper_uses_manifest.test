@@ -1,0 +1,13 @@
+# status.sh helper in workload_logs should execute and render status table from sibling manifest
+RUN_TASKS: tasks/task_a:run_a tasks/task_b
+EXIT: 0
+FILE_EXISTS: $TEST_WORKDIR/workload_logs/run_tasks/status.sh
+FILE_EXISTS: $TEST_WORKDIR/workload_logs/run_tasks/manifest
+RUN: "$TEST_WORKDIR/workload_logs/run_tasks/status.sh" | sed -E 's/\x1b\[[0-9;]*m//g' > "$TEST_WORKDIR/helper_status.out"
+EXIT: 0
+FILE_CONTENT: $TEST_WORKDIR/helper_status.out
+JOB/IDX  RUN                          PATH                                                              STATUS 
+-------  ---------------------------  ----------------------------------------------------------------  -------
+0/0      run_a                        tasks/task_a                                                      SUCCESS
+0/1      assets                       tasks/task_b                                                      SUCCESS
+END_FILE_CONTENT

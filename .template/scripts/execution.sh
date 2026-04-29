@@ -614,7 +614,7 @@ create_manifest() {
   cat > "$inv_dir/status.sh" << 'STATUS_HELPER'
 #!/usr/bin/env bash
 set -euo pipefail
-exec "__RUN_TASKS_SCRIPT__" --status-manifest="$(dirname "\$0")/manifest"
+exec "__RUN_TASKS_SCRIPT__" --status-manifest="$(dirname "$0")/manifest"
 STATUS_HELPER
   # Inject wrapper path without expanding $0/command-substitutions from inside the helper.
   sed -i "s#__RUN_TASKS_SCRIPT__#${RUN_TASKS_SCRIPT//\//\\/}#g" "$inv_dir/status.sh"
