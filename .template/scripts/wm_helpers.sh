@@ -111,6 +111,7 @@ wm_get_manifest_task_line() {
 #   SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES.
 _wm_slurm_default_sbatch() {
   local jid="$1" array_max="$2" dep_line="$3" gres_line="$4" workload_name_val="$5"
+  local apptainer_module="${APPTAINER_MODULE:-Apptainer}"
   echo "#!/bin/bash"
   echo "#SBATCH --array=0-${array_max}"
   echo "#SBATCH --partition=${SBATCH_PARTITION}"
@@ -131,7 +132,7 @@ _wm_slurm_default_sbatch() {
   echo "export TEMPLATE=\"${TEMPLATE:-}\""
   echo "export RUN_TASKS_SCRIPT=\"${RUN_TASKS_SCRIPT:-}\""
 
-  echo "module add Apptainer"
+  echo "module add ${apptainer_module}"
   echo "exec \"$RUNNER\" --array-manifest=\"$MANIFEST\" --array-job-id=\"$jid\" --array-task-id=\${SLURM_ARRAY_TASK_ID}"
 }
 
