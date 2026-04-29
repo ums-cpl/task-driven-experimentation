@@ -1,5 +1,5 @@
 # Task without dependencies is in stage 0
-RUN: --dry-run tasks/indep
+RUN_TASKS: --dry-run tasks/indep
 EXIT: 0
 STDOUT:
 Discovering task runs...

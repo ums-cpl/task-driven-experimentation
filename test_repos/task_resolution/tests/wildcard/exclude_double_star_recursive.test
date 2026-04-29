@@ -1,5 +1,5 @@
 # Double-star in --exclude should recursively match all task directories
-RUN: --dry-run tasks/deep tasks/parent --exclude "tasks/**"
+RUN_TASKS: --dry-run tasks/deep tasks/parent --exclude "tasks/**"
 EXIT: 0
 STDOUT:
 Discovering task runs...

@@ -1,6 +1,6 @@
 # Path outside tasks/: resolve_arg error is in a subshell so the script
 # continues with no tasks and produces an empty manifest.
-RUN: --dry-run assets
+RUN_TASKS: --dry-run assets
 EXIT: 0
 STDOUT:
 Discovering task runs...

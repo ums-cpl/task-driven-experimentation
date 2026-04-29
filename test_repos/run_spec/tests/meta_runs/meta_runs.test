@@ -1,5 +1,5 @@
 # TASK_RUNS from task_meta.sh is used when no suffix
-RUN: --dry-run tasks/with_runs
+RUN_TASKS: --dry-run tasks/with_runs
 EXIT: 0
 STDOUT:
 Discovering task runs...

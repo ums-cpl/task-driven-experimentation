@@ -1,5 +1,5 @@
 # Failed task creates .run_failed marker and exits non-zero (via array execution mode)
-RUN: --array-manifest=$ASSETS/fail_manifest --array-job-id=0 --array-task-id=0
+RUN_TASKS: --array-manifest=$ASSETS/fail_manifest --array-job-id=0 --array-task-id=0
 EXIT: 1
 FILE_EXISTS: $TASKS/fail/assets/.run_failed
 FILE_EXISTS: $TASKS/fail/assets/.run_begin

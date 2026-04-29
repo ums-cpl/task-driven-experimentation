@@ -1,5 +1,5 @@
 # TASK_RUNS override changes run name
-RUN: --dry-run TASK_RUNS=custom tasks/alpha
+RUN_TASKS: --dry-run TASK_RUNS=custom tasks/alpha
 EXIT: 0
 STDOUT:
 Discovering task runs...

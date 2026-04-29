@@ -1,5 +1,5 @@
 # Adjacent differing path segments collapse to a single "*"
-RUN: --dry-run tasks/collapse/a/x/leaf tasks/collapse/b/y/leaf
+RUN_TASKS: --dry-run tasks/collapse/a/x/leaf tasks/collapse/b/y/leaf
 EXIT: 0
 STDOUT:
 Discovering task runs...

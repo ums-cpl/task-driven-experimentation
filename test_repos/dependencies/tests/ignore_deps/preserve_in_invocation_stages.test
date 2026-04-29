@@ -1,5 +1,5 @@
 # --ignore-deps keeps dependency staging for selected tasks, ignores missing external deps
-RUN: --dry-run --ignore-deps tasks/top tasks/middle
+RUN_TASKS: --dry-run --ignore-deps tasks/top tasks/middle
 EXIT: 0
 STDOUT:
 Discovering task runs...

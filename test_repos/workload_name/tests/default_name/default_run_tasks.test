@@ -1,5 +1,5 @@
 # Default WORKLOAD_NAME is "run_tasks"
-RUN: --dry-run tasks/default_name
+RUN_TASKS: --dry-run tasks/default_name
 EXIT: 0
 STDOUT:
 Discovering task runs...

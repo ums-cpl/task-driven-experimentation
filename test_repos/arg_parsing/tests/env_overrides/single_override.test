@@ -1,5 +1,5 @@
 # Single KEY=VALUE override appears in manifest
-RUN: --dry-run FOO=bar tasks/alpha
+RUN_TASKS: --dry-run FOO=bar tasks/alpha
 EXIT: 0
 STDOUT:
 Discovering task runs...

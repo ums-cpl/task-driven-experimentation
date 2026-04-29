@@ -1,5 +1,5 @@
 # Empty strings are allowed in brace lists
-RUN: --dry-run "tasks/simple:{,a}" "tasks/simple:b{,c}"
+RUN_TASKS: --dry-run "tasks/simple:{,a}" "tasks/simple:b{,c}"
 EXIT: 0
 STDOUT:
 Discovering task runs...

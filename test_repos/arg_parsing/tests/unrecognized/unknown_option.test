@@ -1,5 +1,5 @@
 # Unrecognised option exits 1 with error on stderr
-RUN: --dry-run --foo tasks/alpha
+RUN_TASKS: --dry-run --foo tasks/alpha
 EXIT: 1
 STDERR:
 Error: Unrecognised option: --foo

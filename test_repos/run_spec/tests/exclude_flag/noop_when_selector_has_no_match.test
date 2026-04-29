@@ -1,5 +1,5 @@
 # Excluding a non-matching selector is a no-op
-RUN: --dry-run tasks/with_runs --exclude tasks/with_runs:run-9
+RUN_TASKS: --dry-run tasks/with_runs --exclude tasks/with_runs:run-9
 EXIT: 0
 STDOUT:
 Discovering task runs...

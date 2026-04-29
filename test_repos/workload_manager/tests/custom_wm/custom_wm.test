@@ -1,5 +1,5 @@
 # Custom workload manager appears in manifest
-RUN: --dry-run tasks/custom_wm
+RUN_TASKS: --dry-run tasks/custom_wm
 EXIT: 0
 STDOUT:
 Discovering task runs...

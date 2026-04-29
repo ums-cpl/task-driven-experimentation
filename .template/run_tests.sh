@@ -4,8 +4,9 @@
 # Layout: `.test` files anywhere under `tests/` (arbitrarily nested)
 #
 # Directives (lines starting with # are comments; blank lines ignored):
-#   RUN: <args>                                 invoke test workdir's .template/run_tasks.sh with args
-#   EXIT: <code>                                expected exit code for the last RUN
+#   RUN: <command>                              run arbitrary command in test workdir
+#   RUN_TASKS: <args>                           invoke test workdir's .template/run_tasks.sh with args
+#   EXIT: <code>                                expected exit code for the last RUN/RUN_TASKS
 #   STDOUT: ... END_STDOUT                      expected stdout (exact)
 #   STDOUT_FILE: <path>                         compare stdout to file
 #   STDERR: ... END_STDERR                      expected stderr (exact)
@@ -177,7 +178,7 @@ log_append() {
 
 invoke_run_tasks() {
   local args_str="$1"
-  local run_sh="$WORK_ROOT/.template/run_tasks.sh"
+  local run_sh="$WORK_ROOT/run_tasks.sh"
 
   if [[ ! -f "$run_sh" ]]; then
     die "Expected run_tasks.sh at $run_sh (workdir setup bug?)"
@@ -193,6 +194,25 @@ invoke_run_tasks() {
     # shellcheck disable=SC2086
     eval "set -- $args_str"
     "$run_sh" "$@"
+  ) >"$out" 2>"$err"
+
+  LAST_EXIT=$?
+  set -e
+  LAST_STDOUT="$(cat "$out")"
+  LAST_STDERR="$(cat "$err")"
+  rm -f "$out" "$err"
+}
+
+invoke_command() {
+  local cmd_str="$1"
+  local out err
+  out="$(mktemp)"
+  err="$(mktemp)"
+
+  set +e
+  (
+    cd "$WORK_ROOT" 2>/dev/null || true
+    bash -c "$cmd_str"
   ) >"$out" 2>"$err"
 
   LAST_EXIT=$?
@@ -247,6 +267,8 @@ run_one_test_file() {
   local last_stdout="" last_stderr="" last_exit=0
   local LAST_RUN_LINE=""
   local line buf expect_path actual_path repo_path test_path
+  local pending_exit=0
+  local pending_run_type=""
 
   while IFS= read -r line || [[ -n "$line" ]]; do
     # Strip leading/trailing for comment check
@@ -258,20 +280,59 @@ run_one_test_file() {
     fi
 
     if [[ "$line" == RUN:* ]]; then
+      if [[ "$pending_exit" -eq 1 ]]; then
+        TEST_OK=0
+        TEST_FAIL_REASON="$pending_run_type requires EXIT before next run directive"
+        log_append "${LAST_RUN_LINE:-$pending_run_type:}"
+        log_append "ACTUAL_EXIT: missing EXIT directive"
+        break
+      fi
+      LAST_RUN_LINE="$line"
+      local cmd
+      cmd="${line#RUN:}"
+      cmd="${cmd#"${cmd%%[![:space:]]*}"}"
+      # Allow $TASKS/$ASSETS/etc tokens inside RUN directives.
+      cmd="$(expand_path_vars "$cmd")"
+      invoke_command "$cmd"
+      last_stdout="$LAST_STDOUT"
+      last_stderr="$LAST_STDERR"
+      last_exit="$LAST_EXIT"
+      pending_exit=1
+      pending_run_type="RUN"
+      continue
+    fi
+
+    if [[ "$line" == RUN_TASKS:* ]]; then
+      if [[ "$pending_exit" -eq 1 ]]; then
+        TEST_OK=0
+        TEST_FAIL_REASON="$pending_run_type requires EXIT before next run directive"
+        log_append "${LAST_RUN_LINE:-$pending_run_type:}"
+        log_append "ACTUAL_EXIT: missing EXIT directive"
+        break
+      fi
       LAST_RUN_LINE="$line"
       local args
-      args="${line#RUN:}"
+      args="${line#RUN_TASKS:}"
       args="${args#"${args%%[![:space:]]*}"}"
-      # Allow $TASKS/$ASSETS/etc tokens inside RUN directives.
+      # Allow $TASKS/$ASSETS/etc tokens inside RUN_TASKS directives.
       args="$(expand_path_vars "$args")"
       invoke_run_tasks "$args"
       last_stdout="$LAST_STDOUT"
       last_stderr="$LAST_STDERR"
       last_exit="$LAST_EXIT"
+      pending_exit=1
+      pending_run_type="RUN_TASKS"
       continue
     fi
 
     if [[ "$line" == EXIT:* ]]; then
+      if [[ "$pending_exit" -eq 0 ]]; then
+        TEST_OK=0
+        TEST_FAIL_REASON="EXIT without preceding RUN or RUN_TASKS"
+        log_append "EXIT: ${line#EXIT:}"
+        log_append "ACTUAL_EXIT: no prior run directive"
+        break
+      fi
       local want
       want="${line#EXIT:}"
       want="${want#"${want%%[![:space:]]*}"}"
@@ -284,6 +345,8 @@ run_one_test_file() {
         log_append "ACTUAL_EXIT: $last_exit"
         break
       fi
+      pending_exit=0
+      pending_run_type=""
       continue
     fi
 
@@ -527,6 +590,13 @@ run_one_test_file() {
     log_append "Unknown directive: $line"
     break
   done < "$TEST_FILE_ABS"
+
+  if [[ "$TEST_OK" -eq 1 && "$pending_exit" -eq 1 ]]; then
+    TEST_OK=0
+    TEST_FAIL_REASON="$pending_run_type requires EXIT afterwards"
+    log_append "${LAST_RUN_LINE:-$pending_run_type:}"
+    log_append "ACTUAL_EXIT: missing EXIT directive"
+  fi
 
   if [[ "$TEST_OK" -eq 1 ]]; then
     rm -rf "$WORK_ROOT"

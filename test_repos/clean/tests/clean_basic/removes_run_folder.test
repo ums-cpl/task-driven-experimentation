@@ -1,4 +1,4 @@
 # --clean removes run output folder
-RUN: --clean tasks/alpha:myrun
+RUN_TASKS: --clean tasks/alpha:myrun
 EXIT: 0
 FILE_NOT_EXISTS: $TASKS/alpha/myrun

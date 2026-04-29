@@ -1,4 +1,4 @@
 # --clean --dry-run does not delete
-RUN: --clean --dry-run tasks/alpha:myrun
+RUN_TASKS: --clean --dry-run tasks/alpha:myrun
 EXIT: 0
 FILE_EXISTS: $TASKS/alpha/myrun/.run_success

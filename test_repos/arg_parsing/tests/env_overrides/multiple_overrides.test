@@ -1,5 +1,5 @@
 # Multiple KEY=VALUE overrides appear in manifest
-RUN: --dry-run FOO=bar BAZ=qux tasks/alpha
+RUN_TASKS: --dry-run FOO=bar BAZ=qux tasks/alpha
 EXIT: 0
 STDOUT:
 Discovering task runs...

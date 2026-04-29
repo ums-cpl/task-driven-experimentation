@@ -1,5 +1,5 @@
 # A run-specific dependency can be expressed with $TASK_FOLDER instead of hard-coded task path.
-RUN: --dry-run --include-deps tasks/path_vars_dep
+RUN_TASKS: --dry-run --include-deps tasks/path_vars_dep
 EXIT: 0
 STDOUT:
 Discovering task runs...

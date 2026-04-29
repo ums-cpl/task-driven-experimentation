@@ -1,5 +1,5 @@
 # Custom base name still appends computed display suffix
-RUN: --dry-run tasks/custom_group/left tasks/custom_group/right
+RUN_TASKS: --dry-run tasks/custom_group/left tasks/custom_group/right
 EXIT: 0
 STDOUT:
 Discovering task runs...

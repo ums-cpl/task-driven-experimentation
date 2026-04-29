@@ -1,5 +1,5 @@
 # Double-star exclude should remove matched task trees and all descendants
-RUN: --dry-run tasks/folder1 tasks/folder2 tasks/folder4 --exclude "tasks/**/my_tasks"
+RUN_TASKS: --dry-run tasks/folder1 tasks/folder2 tasks/folder4 --exclude "tasks/**/my_tasks"
 EXIT: 0
 STDOUT:
 Discovering task runs...

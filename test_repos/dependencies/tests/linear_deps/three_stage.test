@@ -1,5 +1,5 @@
 # Three-stage chain: top -> middle -> base
-RUN: --dry-run --include-deps tasks/top
+RUN_TASKS: --dry-run --include-deps tasks/top
 EXIT: 0
 STDOUT:
 Discovering task runs...

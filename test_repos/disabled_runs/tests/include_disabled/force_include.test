@@ -1,5 +1,5 @@
 # --include-disabled forces disabled task into manifest
-RUN: --dry-run --include-disabled tasks/disabled_task tasks/enabled_task
+RUN_TASKS: --dry-run --include-disabled tasks/disabled_task tasks/enabled_task
 EXIT: 0
 STDOUT:
 Discovering task runs...

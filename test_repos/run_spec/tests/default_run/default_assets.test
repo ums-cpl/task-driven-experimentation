@@ -1,5 +1,5 @@
 # Default run name is "assets" when no TASK_RUNS and no suffix
-RUN: --dry-run tasks/simple
+RUN_TASKS: --dry-run tasks/simple
 EXIT: 0
 STDOUT:
 Discovering task runs...

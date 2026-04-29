@@ -1,5 +1,5 @@
 # --exclude=VALUE form is accepted and applies to prior specs
-RUN: --dry-run tasks/with_runs --exclude=tasks/with_runs:run-1
+RUN_TASKS: --dry-run tasks/with_runs --exclude=tasks/with_runs:run-1
 EXIT: 0
 STDOUT:
 Discovering task runs...

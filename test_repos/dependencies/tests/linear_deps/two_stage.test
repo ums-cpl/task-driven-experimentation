@@ -1,5 +1,5 @@
 # Two-stage dependency: middle depends on base
-RUN: --dry-run --include-deps tasks/middle
+RUN_TASKS: --dry-run --include-deps tasks/middle
 EXIT: 0
 STDOUT:
 Discovering task runs...

@@ -1,5 +1,5 @@
 # Empty range {5:1} produces no runs
-RUN: --dry-run "tasks/simple:{5:1}"
+RUN_TASKS: --dry-run "tasks/simple:{5:1}"
 EXIT: 0
 STDOUT:
 Discovering task runs...

@@ -1,5 +1,5 @@
 # Suffix overrides TASK_RUNS from task_meta.sh
-RUN: --dry-run tasks/with_runs:custom
+RUN_TASKS: --dry-run tasks/with_runs:custom
 EXIT: 0
 STDOUT:
 Discovering task runs...

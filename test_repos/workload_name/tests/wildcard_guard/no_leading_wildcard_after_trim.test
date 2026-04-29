@@ -1,5 +1,5 @@
 # Prefix trimming does not allow display path to start with "*"
-RUN: --dry-run tasks/experiment/MatMul/IS1/TVM/bench tasks/experiment/MatMul/IS1/PPCG/bench tasks/experiment/MatMul/IS1/cuBLAS
+RUN_TASKS: --dry-run tasks/experiment/MatMul/IS1/TVM/bench tasks/experiment/MatMul/IS1/PPCG/bench tasks/experiment/MatMul/IS1/cuBLAS
 EXIT: 0
 STDOUT:
 Discovering task runs...

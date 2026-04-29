@@ -1,5 +1,5 @@
 # All tasks succeeded: nothing to submit
-RUN: --skip-succeeded tasks/done_task
+RUN_TASKS: --skip-succeeded tasks/done_task
 EXIT: 0
 STDOUT:
 Discovering task runs...

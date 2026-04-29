@@ -230,8 +230,9 @@ Directive parsing rules:
 - directives are processed in order
 
 Commands:
-- `RUN: <args>` starts a command block (invokes `run_tasks.sh` with shell word-splitting of `<args>`)
-- `EXIT: <code>` is required after each `RUN:` and asserts the last command’s exit code
+- `RUN: <command>` starts a command block and runs an arbitrary shell command from the test workdir
+- `RUN_TASKS: <args>` starts a command block and invokes `run_tasks.sh` with shell word-splitting of `<args>`
+- `EXIT: <code>` is required after each `RUN:`/`RUN_TASKS:` and asserts the last command’s exit code
 
 Optional expectations (checked after the matching `EXIT:`):
 - `STDOUT: ... END_STDOUT` exact stdout block

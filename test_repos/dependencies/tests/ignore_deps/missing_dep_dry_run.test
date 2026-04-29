@@ -1,5 +1,5 @@
 # --ignore-deps skips dependency validation in dry-run mode
-RUN: --dry-run --ignore-deps tasks/middle
+RUN_TASKS: --dry-run --ignore-deps tasks/middle
 EXIT: 0
 STDOUT:
 Discovering task runs...

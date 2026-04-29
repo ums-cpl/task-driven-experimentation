@@ -1,5 +1,5 @@
 # Literal suffix specifies run name
-RUN: --dry-run tasks/simple:local
+RUN_TASKS: --dry-run tasks/simple:local
 EXIT: 0
 STDOUT:
 Discovering task runs...

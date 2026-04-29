@@ -1,5 +1,5 @@
 # Mixed path lengths append trailing "*" in display path
-RUN: --dry-run tasks/mixed/alpha/one tasks/mixed/beta/one/two
+RUN_TASKS: --dry-run tasks/mixed/alpha/one tasks/mixed/beta/one/two
 EXIT: 0
 STDOUT:
 Discovering task runs...

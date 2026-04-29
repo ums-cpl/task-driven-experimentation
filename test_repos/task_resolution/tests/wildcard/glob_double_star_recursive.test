@@ -1,5 +1,5 @@
 # Double-star should recursively match task directories with run.sh
-RUN: --dry-run "tasks/**"
+RUN_TASKS: --dry-run "tasks/**"
 EXIT: 0
 STDOUT:
 Discovering task runs...

@@ -1,5 +1,5 @@
 # Double-star exclude should match across path segments for a specific task
-RUN: --dry-run tasks/simple tasks/with_runs --exclude "tasks/**/with_runs"
+RUN_TASKS: --dry-run tasks/simple tasks/with_runs --exclude "tasks/**/with_runs"
 EXIT: 0
 STDOUT:
 Discovering task runs...

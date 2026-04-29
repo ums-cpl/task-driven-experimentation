@@ -1,5 +1,5 @@
 # --direct sets RUN_WORKLOAD_MANAGER to the template direct workload manager (manifest records override)
-RUN: --dry-run --direct tasks/direct_task
+RUN_TASKS: --dry-run --direct tasks/direct_task
 EXIT: 0
 STDOUT:
 Discovering task runs...

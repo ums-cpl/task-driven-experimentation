@@ -1,5 +1,5 @@
 # Partially succeeded: only pending task appears
-RUN: --dry-run --skip-succeeded tasks/done_task tasks/pending_task
+RUN_TASKS: --dry-run --skip-succeeded tasks/done_task tasks/pending_task
 EXIT: 0
 STDOUT:
 Discovering task runs...

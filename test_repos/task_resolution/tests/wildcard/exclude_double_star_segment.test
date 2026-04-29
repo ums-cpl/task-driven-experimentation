@@ -1,5 +1,5 @@
 # Double-star in --exclude should match across multiple path segments
-RUN: --dry-run tasks/deep tasks/parent --exclude "tasks/**/b"
+RUN_TASKS: --dry-run tasks/deep tasks/parent --exclude "tasks/**/b"
 EXIT: 0
 STDOUT:
 Discovering task runs...

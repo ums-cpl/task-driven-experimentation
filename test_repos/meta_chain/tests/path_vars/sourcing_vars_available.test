@@ -1,5 +1,5 @@
 # TASK_FOLDER should be available in task_meta.sh; TASK_FOLDER and RUN_FOLDER should be available in run_meta.sh/run_deps.sh.
-RUN: --dry-run --include-deps tasks/path_vars
+RUN_TASKS: --dry-run --include-deps tasks/path_vars
 EXIT: 0
 STDOUT:
 Discovering task runs...

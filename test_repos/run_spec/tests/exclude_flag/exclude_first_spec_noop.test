@@ -1,5 +1,5 @@
 # --exclude with no prior task specs is a no-op
-RUN: --dry-run --exclude tasks/with_runs:run-1 tasks/with_runs
+RUN_TASKS: --dry-run --exclude tasks/with_runs:run-1 tasks/with_runs
 EXIT: 0
 STDOUT:
 Discovering task runs...

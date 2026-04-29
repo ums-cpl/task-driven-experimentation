@@ -1,5 +1,5 @@
 # Overrides accumulate across task specs
-RUN: --dry-run FOO=bar tasks/alpha BAZ=qux tasks/beta
+RUN_TASKS: --dry-run FOO=bar tasks/alpha BAZ=qux tasks/beta
 EXIT: 0
 STDOUT:
 Discovering task runs...

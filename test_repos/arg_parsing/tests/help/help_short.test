@@ -1,3 +1,3 @@
 # -h flag exits 0
-RUN: -h
+RUN_TASKS: -h
 EXIT: 0

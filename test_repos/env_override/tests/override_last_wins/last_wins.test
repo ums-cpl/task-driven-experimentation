@@ -1,5 +1,5 @@
 # Last value of same key wins
-RUN: --dry-run FOO=first FOO=second tasks/alpha
+RUN_TASKS: --dry-run FOO=first FOO=second tasks/alpha
 EXIT: 0
 STDOUT:
 Discovering task runs...

@@ -1,5 +1,5 @@
 # Intra-task run dependency should resolve.
-RUN: --dry-run --include-deps tasks/intra_task_deps
+RUN_TASKS: --dry-run --include-deps tasks/intra_task_deps
 EXIT: 0
 STDOUT:
 Discovering task runs...

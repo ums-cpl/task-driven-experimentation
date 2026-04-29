@@ -1,5 +1,5 @@
 # --skip-verify-def flag sets header to true
-RUN: --dry-run --skip-verify-def tasks/a
+RUN_TASKS: --dry-run --skip-verify-def tasks/a
 EXIT: 0
 STDOUT:
 Discovering task runs...

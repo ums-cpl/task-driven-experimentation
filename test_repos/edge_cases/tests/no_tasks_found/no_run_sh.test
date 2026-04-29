@@ -1,5 +1,5 @@
 # Nonexistent task path: error in subshell, script continues with empty manifest
-RUN: --dry-run tasks/does_not_exist
+RUN_TASKS: --dry-run tasks/does_not_exist
 EXIT: 0
 STDOUT:
 Discovering task runs...
