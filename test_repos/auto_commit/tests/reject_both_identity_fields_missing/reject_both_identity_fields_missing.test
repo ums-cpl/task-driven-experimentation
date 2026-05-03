@@ -1,0 +1,6 @@
+# Neither user.name nor user.email configured
+RUN: git -C "$TEST_WORKDIR" init -b main
+EXIT: 0
+RUN_TASKS: --auto-commit --dry-run tasks/trivial
+EXIT: 1
+STDERR_CONTAINS: user.name

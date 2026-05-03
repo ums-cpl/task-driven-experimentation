@@ -236,8 +236,10 @@ Commands:
 
 Optional expectations (checked after the matching `EXIT:`):
 - `STDOUT: ... END_STDOUT` exact stdout block
+- `STDOUT_CONTAINS: <substring>` assert the last command’s stdout contains the given literal substring
 - `STDOUT_FILE: <path>` compare stdout to a reference file
 - `STDERR: ... END_STDERR` exact stderr block
+- `STDERR_CONTAINS: <substring>` assert the last command’s stderr contains the given literal substring
 - `STDERR_FILE: <path>` compare stderr to a reference file
 - `FILE_EXISTS: <path>` assert a regular file exists under the workdir repo root
 - `FILE_NOT_EXISTS: <path>` assert nothing exists under the workdir repo root

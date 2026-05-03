@@ -1,0 +1,8 @@
+# Successful task run with --auto-commit records a commit for the run folder
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && git -C "$TEST_WORKDIR" commit --allow-empty -m "seed"
+EXIT: 0
+RUN_TASKS: --auto-commit tasks/trivial
+EXIT: 0
+FILE_EXISTS: $TASKS/trivial/assets/.run_success
+RUN: git -C "$TEST_WORKDIR" log -1 --pretty=%s | grep -F '[Auto-commit] Add task run tasks/trivial/assets'
+EXIT: 0

@@ -380,7 +380,7 @@ is_direct_wm() {
 }
 
 # Creates a single manifest file. Group by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER).
-# Format: header (SKIP_VERIFY_DEF, ---), then JOB blocks with STAGE, WORKLOAD_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
+# Format: header (SKIP_VERIFY_DEF, optional AUTO_COMMIT=true, ---), then JOB blocks with STAGE, WORKLOAD_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
 # Errors if both direct.sh and other WMs appear (mixing not supported).
 # When RUN_TASKS_PRECOMPUTED_TASK_STAGE and RUN_TASKS_PRECOMPUTED_MAX_STAGE are set, uses them.
 create_manifest() {
@@ -557,6 +557,7 @@ create_manifest() {
 
   print_manifest_content() {
     echo "SKIP_VERIFY_DEF=$SKIP_VERIFY_DEF"
+    [[ "$AUTO_COMMIT" == true ]] && echo "AUTO_COMMIT=true"
     echo "---"
     local key task_dir run_name overrides dep_list prev_stage i block_started=false
     for key in "${emitted_keys[@]}"; do
@@ -623,6 +624,22 @@ STATUS_HELPER
   echo "$manifest_path"
 }
 
+# After a successful task run, commit changes under that run's output folder when AUTO_COMMIT is true.
+auto_commit_after_successful_run() {
+  local task_dir="$1" run_name="$2"
+  local root="${REPOSITORY_ROOT:?}"
+  local run_folder="$task_dir/$run_name"
+  local rel
+  _require_abs_under_repo_root "RUN_FOLDER" "$run_folder" || return 1
+  rel=$(_abs_to_repo_rel "$run_folder") || return 1
+  git -C "$root" add -- "$rel"
+  if git -C "$root" diff --cached --quiet; then
+    echo "Auto-commit: nothing to commit for $rel" >&2
+    return 0
+  fi
+  git -C "$root" commit -m "[Auto-commit] Add task run $rel"
+}
+
 # Run a single task from a manifest (array execution mode).
 # Requires --array-job-id and --array-task-id. Looks up job block and task within it.
 run_array_task() {
@@ -631,11 +648,14 @@ run_array_task() {
   local task_id="$3"
   local line task_dir
 
-  # Parse header: SKIP_VERIFY_DEF only until --- (per-run overrides are in run lines)
+  # Parse header until --- (per-run overrides are in run lines)
   while IFS= read -r line; do
     [[ "$line" == "---" ]] && break
     if [[ "$line" == SKIP_VERIFY_DEF=* ]]; then
       SKIP_VERIFY_DEF="${line#SKIP_VERIFY_DEF=}"
+    fi
+    if [[ "$line" == AUTO_COMMIT=* ]]; then
+      AUTO_COMMIT="${line#AUTO_COMMIT=}"
     fi
   done < "$manifest"
 
@@ -661,4 +681,9 @@ run_array_task() {
   done
 
   run_task "$task_dir" "$run_name"
+  local run_status=$?
+  if [[ $run_status -eq 0 && "$AUTO_COMMIT" == true ]]; then
+    auto_commit_after_successful_run "$task_dir" "$run_name" || echo "Error: auto-commit failed (task run still succeeded)." >&2
+  fi
+  return $run_status
 }

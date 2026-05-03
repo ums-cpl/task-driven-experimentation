@@ -19,6 +19,7 @@ Options:
   --clean                Remove output folders for specified tasks, do not run
   --exclude TASK         Exclude previously selected task runs
   --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
+  --auto-commit          After each successful task run, git commit changes under that run's folder
   --skip-verify-def      Skip verification that container image matches definition file
   --include-disabled     Run runs even if RUN_DISABLED is set in run_meta.sh
   --include-deps         Include missing dependency task runs in the invocation instead of failing
@@ -89,6 +90,10 @@ parse_args() {
         ;;
       --skip-succeeded)
         SKIP_SUCCEEDED=true
+        shift
+        ;;
+      --auto-commit)
+        AUTO_COMMIT=true
         shift
         ;;
       --skip-verify-def)

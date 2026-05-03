@@ -8,8 +8,10 @@
 #   RUN_TASKS: <args>                           invoke test workdir's .template/run_tasks.sh with args
 #   EXIT: <code>                                expected exit code for the last RUN/RUN_TASKS
 #   STDOUT: ... END_STDOUT                      expected stdout (exact)
+#   STDOUT_CONTAINS: <substring>                last RUN/RUN_TASKS stdout must contain this literal substring
 #   STDOUT_FILE: <path>                         compare stdout to file
 #   STDERR: ... END_STDERR                      expected stderr (exact)
+#   STDERR_CONTAINS: <substring>                last RUN/RUN_TASKS stderr must contain this literal substring
 #   STDERR_FILE: <path>                         compare stderr to file
 #   FILE_EXISTS: <path>                         assert a regular file exists
 #   FILE_NOT_EXISTS: <path>                     assert nothing exists at path
@@ -145,7 +147,10 @@ resolve_test_context() {
 }
 
 setup_workdir() {
-  rm -rf "$WORK_ROOT"
+  if [[ -e "$WORK_ROOT" ]]; then
+    chmod -R u+w "$WORK_ROOT" 2>/dev/null || true
+    rm -rf "$WORK_ROOT"
+  fi
   mkdir -p "$WORK_ROOT"
 
   # Symlink template + assets; copy tasks (required to keep workdir independent).
@@ -234,6 +239,7 @@ expand_path_vars() {
   path="${path//\$ASSETS/$ASSETS_DIR}"
   path="${path//\$TEST_WORKDIR/$WORK_ROOT}"
   path="${path//\$TEST_NAME/$TEST_STEM}"
+  path="${path//\$TEST_DIR/$TEST_DIR}"
 
   echo "$path"
 }
@@ -381,6 +387,28 @@ run_one_test_file() {
       continue
     fi
 
+    if [[ "$line" == STDOUT_CONTAINS:* ]]; then
+      local substr stdout_norm
+      substr="${line#STDOUT_CONTAINS:}"
+      substr="${substr#"${substr%%[![:space:]]*}"}"
+      substr="${substr%"${substr##*[![:space:]]}"}"
+      stdout_norm="$last_stdout"
+      stdout_norm="$(printf '%s' "$stdout_norm" | sed \
+        -e "s#${TASKS_DIR%/}/#tasks/#g" \
+        -e "s#${WORK_ROOT%/}/.template/#.template/#g" \
+        -e "s#${REPO_ROOT%/}/.template/#.template/#g")"
+      if [[ "$stdout_norm" != *"$substr"* ]]; then
+        TEST_OK=0
+        TEST_FAIL_REASON="STDOUT_CONTAINS: substring not found"
+        log_append "STDOUT_CONTAINS: $substr"
+        log_append "ACTUAL_STDOUT (normalised):"
+        log_append "$stdout_norm"
+        log_append "END_ACTUAL_STDOUT"
+        break
+      fi
+      continue
+    fi
+
     if [[ "$line" == STDOUT_FILE:* ]]; then
       expect_path="${line#STDOUT_FILE:}"
       if [[ -z "${expect_path%%[![:space:]]*}" ]]; then
@@ -426,6 +454,23 @@ run_one_test_file() {
         log_append "STDERR:"
         log_append "$buf"
         log_append "END_STDERR"
+        log_append "ACTUAL_STDERR:"
+        log_append "$last_stderr"
+        log_append "END_ACTUAL_STDERR"
+        break
+      fi
+      continue
+    fi
+
+    if [[ "$line" == STDERR_CONTAINS:* ]]; then
+      local substr
+      substr="${line#STDERR_CONTAINS:}"
+      substr="${substr#"${substr%%[![:space:]]*}"}"
+      substr="${substr%"${substr##*[![:space:]]}"}"
+      if [[ "$last_stderr" != *"$substr"* ]]; then
+        TEST_OK=0
+        TEST_FAIL_REASON="STDERR_CONTAINS: substring not found"
+        log_append "STDERR_CONTAINS: $substr"
         log_append "ACTUAL_STDERR:"
         log_append "$last_stderr"
         log_append "END_ACTUAL_STDERR"

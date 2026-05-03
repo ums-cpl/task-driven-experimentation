@@ -1,0 +1,5 @@
+# --auto-commit triggers validation before main; --help then exits 0 without running tasks
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e"
+EXIT: 0
+RUN_TASKS: --auto-commit --help
+EXIT: 0

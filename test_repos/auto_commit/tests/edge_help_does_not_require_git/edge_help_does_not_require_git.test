@@ -1,0 +1,3 @@
+# --help never touches git
+RUN_TASKS: --help
+EXIT: 0

@@ -1,0 +1,6 @@
+# Manifest header includes AUTO_COMMIT when flag is set
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e"
+EXIT: 0
+RUN_TASKS: --dry-run --auto-commit tasks/trivial
+EXIT: 0
+STDOUT_CONTAINS: AUTO_COMMIT=true

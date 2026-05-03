@@ -1,0 +1,6 @@
+# --auto-commit: git repo exists but user.name is unset
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.email "only@example.invalid"
+EXIT: 0
+RUN_TASKS: --auto-commit --dry-run tasks/trivial
+EXIT: 1
+STDERR_CONTAINS: user.name

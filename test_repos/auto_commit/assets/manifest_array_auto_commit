@@ -1,0 +1,9 @@
+SKIP_VERIFY_DEF=false
+AUTO_COMMIT=true
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/trivial

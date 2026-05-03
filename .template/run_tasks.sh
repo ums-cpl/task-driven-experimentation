@@ -35,4 +35,11 @@ source "$RUN_TASKS_LIB/status.sh"
 source "$RUN_TASKS_LIB/execution.sh"
 source "$RUN_TASKS_LIB/main.sh"
 
+for __arg in "$@"; do
+  if [[ "$__arg" == "--auto-commit" ]]; then
+    validate_git_identity_for_auto_commit
+    break
+  fi
+done
+
 main "$@"

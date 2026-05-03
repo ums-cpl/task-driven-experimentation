@@ -1,0 +1,7 @@
+# Failing task must not add an auto-commit on top of the seed commit
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && git -C "$TEST_WORKDIR" commit --allow-empty -m "seed"
+EXIT: 0
+RUN_TASKS: --auto-commit tasks/fails
+EXIT: 1
+RUN: test "$(git -C "$TEST_WORKDIR" rev-list --count HEAD)" -eq 1
+EXIT: 0

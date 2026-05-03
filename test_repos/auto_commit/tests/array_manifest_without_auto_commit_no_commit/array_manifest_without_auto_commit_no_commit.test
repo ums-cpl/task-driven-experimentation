@@ -1,0 +1,8 @@
+# Array mode without AUTO_COMMIT in manifest: task succeeds but no extra git commit after seed
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && git -C "$TEST_WORKDIR" commit --allow-empty -m "seed"
+EXIT: 0
+RUN_TASKS: --array-manifest=$TEST_WORKDIR/assets/manifest_without_auto_commit --array-job-id=0 --array-task-id=0
+EXIT: 0
+FILE_EXISTS: $TASKS/trivial/assets/.run_success
+RUN: test "$(git -C "$TEST_WORKDIR" rev-list --count HEAD)" -eq 1
+EXIT: 0

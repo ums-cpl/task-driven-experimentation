@@ -1,0 +1,10 @@
+# Auto-commit stages only the run output directory; a file written at repo root by run.sh is not committed
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && git -C "$TEST_WORKDIR" commit --allow-empty -m "seed"
+EXIT: 0
+RUN_TASKS: --auto-commit tasks/writes_outside
+EXIT: 0
+FILE_EXISTS: $TEST_WORKDIR/LEAK.auto_commit_test
+RUN: ! git -C "$TEST_WORKDIR" ls-files --error-unmatch LEAK.auto_commit_test >/dev/null 2>&1
+EXIT: 0
+RUN: git -C "$TEST_WORKDIR" ls-files --error-unmatch tasks/writes_outside/assets/in_run_only.txt >/dev/null 2>&1
+EXIT: 0
