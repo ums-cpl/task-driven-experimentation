@@ -1,0 +1,16 @@
+# --no-uncommitted-changes aborts when a dependency run folder becomes dirty after the dependency finished but before the dependent runs (.run_script.sh scoped git check).
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && rm -f "$TEST_WORKDIR/assets" && mkdir -p "$TEST_WORKDIR/assets" && git -C "$TEST_WORKDIR" add -A && git -C "$TEST_WORKDIR" commit -m seed
+EXIT: 0
+RUN_TASKS: --no-uncommitted-changes --include-deps tasks/consumer
+EXIT: 1
+FILE_EXISTS: $TASKS/consumer/assets/.run_metadata
+FILE_EXISTS: $TASKS/consumer/assets/.run_begin
+FILE_EXISTS: $TASKS/consumer/assets/.run_failed
+FILE_NOT_EXISTS: $TASKS/consumer/assets/.run_success
+RUN: cat "$TASKS/consumer/assets/.run_metadata"
+EXIT: 0
+STDOUT_CONTAINS: git_uncommitted_summary=dirty
+STDOUT_CONTAINS: git_uncommitted_scopes=dependencies
+RUN: cat "$TASKS/consumer/assets/.run_output.log"
+EXIT: 0
+STDOUT_CONTAINS: --no-uncommitted-changes

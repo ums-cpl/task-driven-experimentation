@@ -20,6 +20,7 @@ INCLUDE_DISABLED=false
 INCLUDE_DEPS=false
 IGNORE_DEPS=false
 AUTO_COMMIT=false
+NO_UNCOMMITTED_CHANGES=false
 declare -a RUN_TASKS_MISSING_SPECS=()
 ARRAY_MANIFEST=""
 ARRAY_JOB_ID=""
@@ -46,6 +47,15 @@ validate_git_identity_for_auto_commit() {
   fi
   if ! git -C "$root" config --get user.email >/dev/null 2>&1; then
     echo "Error: --auto-commit requires git user.email (set with: git config user.email \"...\")" >&2
+    exit 1
+  fi
+}
+
+# Exits 1 if REPOSITORY_ROOT is not a git repo (--no-uncommitted-changes).
+validate_git_repo_for_no_uncommitted_changes() {
+  local root="${REPOSITORY_ROOT:?}"
+  if ! git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
+    echo "Error: --no-uncommitted-changes requires REPOSITORY_ROOT to be a git repository: $root" >&2
     exit 1
   fi
 }

@@ -1,0 +1,13 @@
+# --auto-commit together with --no-uncommitted-changes: the dependency run leaves tracked-but-uncommitted output under its run folder; auto-commit commits that folder before the dependent runs, so the dependent's scoped git check sees a clean dependency tree and succeeds.
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && rm -f "$TEST_WORKDIR/assets" && mkdir -p "$TEST_WORKDIR/assets" && git -C "$TEST_WORKDIR" add -A && git -C "$TEST_WORKDIR" commit -m seed
+EXIT: 0
+RUN_TASKS: --auto-commit --no-uncommitted-changes --include-deps tasks/consumer
+EXIT: 0
+FILE_EXISTS: $TASKS/producer/assets/.run_success
+FILE_EXISTS: $TASKS/consumer/assets/.run_success
+RUN: git -C "$TEST_WORKDIR" log --oneline -- tasks/producer/assets | head -1 | cat
+EXIT: 0
+STDOUT_CONTAINS: [Auto-commit] Add task run tasks/producer/assets
+RUN: cat "$TASKS/consumer/assets/.run_metadata"
+EXIT: 0
+STDOUT_CONTAINS: git_uncommitted_summary=clean

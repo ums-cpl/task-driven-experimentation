@@ -1,0 +1,6 @@
+# Manifest header includes NO_UNCOMMITTED_CHANGES when flag is set
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e"
+EXIT: 0
+RUN_TASKS: --dry-run --no-uncommitted-changes tasks/leaf
+EXIT: 0
+STDOUT_CONTAINS: NO_UNCOMMITTED_CHANGES=true

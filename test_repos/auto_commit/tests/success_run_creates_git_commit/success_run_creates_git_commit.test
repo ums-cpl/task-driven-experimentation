@@ -4,5 +4,6 @@ EXIT: 0
 RUN_TASKS: --auto-commit tasks/trivial
 EXIT: 0
 FILE_EXISTS: $TASKS/trivial/assets/.run_success
-RUN: git -C "$TEST_WORKDIR" log -1 --pretty=%s | grep -F '[Auto-commit] Add task run tasks/trivial/assets'
+RUN: git -C "$TEST_WORKDIR" log -1 --pretty=%s | cat
 EXIT: 0
+STDOUT_CONTAINS: [Auto-commit] Add task run tasks/trivial/assets

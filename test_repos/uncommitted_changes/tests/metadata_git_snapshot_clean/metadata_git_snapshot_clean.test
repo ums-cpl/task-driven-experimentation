@@ -1,0 +1,15 @@
+# Clean repo: .run_metadata records git_commit=, porcelain sections, and summary=clean
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && rm -f "$TEST_WORKDIR/assets" && mkdir -p "$TEST_WORKDIR/assets" && git -C "$TEST_WORKDIR" add -A && git -C "$TEST_WORKDIR" commit -m seed
+EXIT: 0
+RUN_TASKS: tasks/leaf
+EXIT: 0
+RUN: cat "$TASKS/leaf/assets/.run_metadata"
+EXIT: 0
+STDOUT_CONTAINS: === git ===
+STDOUT_CONTAINS: --- git status porcelain: $ASSETS ---
+STDOUT_CONTAINS: (no uncommitted changes)
+STDOUT_CONTAINS: git_uncommitted_summary=clean
+STDOUT_CONTAINS: git_uncommitted_scopes=
+RUN: h=$(git -C "$TEST_WORKDIR" rev-parse HEAD); l=$(awk -F= '/^git_commit=/{print $2; exit}' "$TASKS/leaf/assets/.run_metadata"); test "$l" = "$h" && echo GIT_COMMIT_MATCH
+EXIT: 0
+STDOUT_CONTAINS: GIT_COMMIT_MATCH

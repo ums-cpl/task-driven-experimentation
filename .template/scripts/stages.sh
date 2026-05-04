@@ -1,6 +1,154 @@
 #!/usr/bin/env bash
 # Stage computation and dependency verification.
 
+# Repo-relative path for an absolute path under REPOSITORY_ROOT (for git pathspecs).
+_repo_rel_from_abs() {
+  local abs="$1"
+  local root="${REPOSITORY_ROOT:?}"
+  [[ -z "$abs" ]] && return 1
+  [[ "$abs" != /* ]] && return 1
+  [[ "$abs" != "$root" && "$abs" != "$root/"* ]] && return 1
+  if [[ "$abs" == "$root" ]]; then
+    echo "."
+  else
+    echo "${abs#"$root"/}"
+  fi
+}
+
+# List run name basenames for one resolved dependency task dir + run spec (matches validate_dependency expansion).
+# _pairs_ref: TASK_RUN_PAIRS-style array for wildcard merge with invocation (may be empty).
+expand_dep_run_names() {
+  local dep_task_dir="$1"
+  local dep_run_spec="$2"
+  local -n _ed_pairs_ref=$3
+  local -n _ed_out_rn=$4
+  _ed_out_rn=()
+  if [[ -z "$dep_run_spec" ]]; then
+    shopt -s nullglob
+    local rf
+    for rf in "$dep_task_dir"/*/; do
+      [[ -d "$rf" ]] && _ed_out_rn+=("$(basename "$rf")")
+    done
+    shopt -u nullglob
+  elif _has_wildcard_outside_braces "$dep_run_spec"; then
+    local -a matched_runs=()
+    expand_run_spec_for_clean "$dep_task_dir" "$dep_run_spec" matched_runs
+    declare -A _matched_set=()
+    local _mr
+    for _mr in "${matched_runs[@]}"; do _matched_set["$_mr"]=1; done
+    local _inv_pair _inv_td _inv_rn
+    for _inv_pair in "${_ed_pairs_ref[@]}"; do
+      _inv_td="${_inv_pair%%	*}"
+      _inv_rn="${_inv_pair#*	}"
+      if [[ "$_inv_td" == "$dep_task_dir" ]] && [[ "$_inv_rn" == $dep_run_spec ]] \
+         && [[ -z "${_matched_set["$_inv_rn"]+x}" ]]; then
+        matched_runs+=("$_inv_rn")
+        _matched_set["$_inv_rn"]=1
+      fi
+    done
+    _ed_out_rn=("${matched_runs[@]}")
+  else
+    expand_run_spec "$dep_run_spec" _ed_out_rn
+  fi
+}
+
+# Absolute paths to dependency run folders for (task_dir, run_name), deduped (single expansion source).
+collect_dep_run_abs_paths_for_task_run() {
+  local task_dir="$1"
+  local run_name="$2"
+  local -n _cd_pairs_ref=$3
+  local -n _cd_out_abs=$4
+  _cd_out_abs=()
+  declare -A _cd_seen_abs=()
+  local dep_entries=()
+  get_task_dependencies "$task_dir" "$run_name" dep_entries
+  local dep_entry parsed dep_task_path dep_run_spec r
+  local -a dep_run_names=()
+  for dep_entry in "${dep_entries[@]}"; do
+    set -f
+    parsed=($(parse_task_spec "$dep_entry"))
+    set +f
+    dep_task_path="${parsed[0]}"
+    dep_run_spec="${parsed[1]:-}"
+    while IFS= read -r r; do
+      [[ -n "$r" ]] || continue
+      dep_run_names=()
+      expand_dep_run_names "$r" "$dep_run_spec" _cd_pairs_ref dep_run_names
+      local rn
+      for rn in "${dep_run_names[@]}"; do
+        local abs_path="$r/$rn"
+        [[ -n "${_cd_seen_abs[$abs_path]+x}" ]] && continue
+        _cd_seen_abs["$abs_path"]=1
+        _cd_out_abs+=("$abs_path")
+      done
+    done < <(resolve_arg "$dep_task_path")
+  done
+}
+
+# Exit 1 if git reports porcelain under ASSETS or any dependency run path for this pair (--no-uncommitted-changes).
+assert_scoped_git_clean_for_task_run_pair() {
+  local task_dir="$1" run_name="$2"
+  local -n _ag_pairs_ref=$3
+  local root="${REPOSITORY_ROOT:?}"
+  git -C "$root" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  local assets_rel
+  assets_rel=$(_repo_rel_from_abs "$ASSETS") || return 1
+  local -a dep_abs=()
+  collect_dep_run_abs_paths_for_task_run "$task_dir" "$run_name" _ag_pairs_ref dep_abs
+  declare -A rel_seen=()
+  rel_seen["$assets_rel"]=1
+  local -a all_rels=("$assets_rel")
+  local d_abs d_rel
+  for d_abs in "${dep_abs[@]}"; do
+    d_rel=$(_repo_rel_from_abs "$d_abs") || continue
+    [[ -n "${rel_seen[$d_rel]+x}" ]] && continue
+    rel_seen["$d_rel"]=1
+    all_rels+=("$d_rel")
+  done
+  local por
+  por="$(git -C "$root" status --porcelain -- "${all_rels[@]}" 2>/dev/null || true)"
+  if [[ -n "$por" ]]; then
+    echo "Error: --no-uncommitted-changes: uncommitted changes under ASSETS and/or dependency run paths; refusing to run." >&2
+    exit 1
+  fi
+}
+
+# Exit 1 if any task run in the invocation would see dirty ASSETS or dependency paths (--no-uncommitted-changes).
+assert_scoped_git_clean_for_full_invocation() {
+  local root="${REPOSITORY_ROOT:?}"
+  git -C "$root" rev-parse --git-dir >/dev/null 2>&1 || return 0
+  local assets_rel
+  assets_rel=$(_repo_rel_from_abs "$ASSETS") || return 1
+  declare -A rel_seen=()
+  rel_seen["$assets_rel"]=1
+  local -a all_rels=("$assets_rel")
+  local i td rn ov_tsv dep_abs d_abs d_rel
+  local -a dep_abs=()
+  for ((i = 0; i < ${#TASK_RUN_PAIRS[@]}; i++)); do
+    ENV_OVERRIDES=()
+    ov_tsv="${TASK_RUN_PAIR_OVERRIDES[$i]:-}"
+    if [[ -n "$ov_tsv" ]]; then
+      IFS=$'\t' read -ra ENV_OVERRIDES <<< "$ov_tsv"
+    fi
+    td="${TASK_RUN_PAIRS[$i]%%	*}"
+    rn="${TASK_RUN_PAIRS[$i]#*	}"
+    dep_abs=()
+    collect_dep_run_abs_paths_for_task_run "$td" "$rn" TASK_RUN_PAIRS dep_abs
+    for d_abs in "${dep_abs[@]}"; do
+      d_rel=$(_repo_rel_from_abs "$d_abs") || continue
+      [[ -n "${rel_seen[$d_rel]+x}" ]] && continue
+      rel_seen["$d_rel"]=1
+      all_rels+=("$d_rel")
+    done
+  done
+  local por
+  por="$(git -C "$root" status --porcelain -- "${all_rels[@]}" 2>/dev/null || true)"
+  if [[ -n "$por" ]]; then
+    echo "Error: --no-uncommitted-changes: uncommitted changes under ASSETS and/or dependency run paths before invocation; refusing to run." >&2
+    exit 1
+  fi
+}
+
 # Validate a single dependency (dependent occ_key depends on dep_task_dir with dep_run_spec).
 # Updates _missing_deps, _missing_count_ref, and _dep_checks. Used by compute_stages.
 # _dep_checks is keyed by occ_key (the dependent).
@@ -18,18 +166,13 @@ validate_dependency() {
   local dep_in_invocation=false
   [[ -n "${_inv_task_set["$dep_task_dir"]+x}" ]] && dep_in_invocation=true
 
-  if [[ -z "$dep_run_spec" ]]; then
-    local -a disk_runs=()
-    shopt -s nullglob
-    local rf
-    for rf in "$dep_task_dir"/*/; do
-      [[ -d "$rf" ]] && disk_runs+=("$(basename "$rf")")
-    done
-    shopt -u nullglob
+  local -a dep_run_names=()
+  expand_dep_run_names "$dep_task_dir" "$dep_run_spec" _pairs_ref dep_run_names
 
+  if [[ -z "$dep_run_spec" ]]; then
     local all_disk_ok=true
     local rn
-    for rn in "${disk_runs[@]}"; do
+    for rn in "${dep_run_names[@]}"; do
       if [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; then
         all_disk_ok=false
         break
@@ -38,7 +181,7 @@ validate_dependency() {
 
     local has_at_least_one=false
     [[ -n "${_inv_task_set["$dep_task_dir"]+x}" ]] && has_at_least_one=true
-    [[ ${#disk_runs[@]} -gt 0 ]] && has_at_least_one=true
+    [[ ${#dep_run_names[@]} -gt 0 ]] && has_at_least_one=true
 
     local resolved_ok=false
     [[ "$all_disk_ok" == true ]] && [[ "$has_at_least_one" == true ]] && resolved_ok=true
@@ -65,22 +208,7 @@ validate_dependency() {
     fi
 
   elif _has_wildcard_outside_braces "$dep_run_spec"; then
-    local -a matched_runs=()
-    expand_run_spec_for_clean "$dep_task_dir" "$dep_run_spec" matched_runs
-    declare -A _matched_set=()
-    local _mr
-    for _mr in "${matched_runs[@]}"; do _matched_set["$_mr"]=1; done
-    local _inv_pair _inv_td _inv_rn
-    for _inv_pair in "${_pairs_ref[@]}"; do
-      _inv_td="${_inv_pair%%	*}"
-      _inv_rn="${_inv_pair#*	}"
-      if [[ "$_inv_td" == "$dep_task_dir" ]] && [[ "$_inv_rn" == $dep_run_spec ]] \
-         && [[ -z "${_matched_set["$_inv_rn"]+x}" ]]; then
-        matched_runs+=("$_inv_rn")
-        _matched_set["$_inv_rn"]=1
-      fi
-    done
-    if [[ ${#matched_runs[@]} -eq 0 ]]; then
+    if [[ ${#dep_run_names[@]} -eq 0 ]]; then
       if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
         return
       fi
@@ -90,7 +218,8 @@ validate_dependency() {
       _missing_deps["$dep_label"]="${_missing_deps["$dep_label"]:+${_missing_deps["$dep_label"]}, }tasks/$rel_task"
       _missing_count_ref=$((_missing_count_ref + 1))
     else
-      for rn in "${matched_runs[@]}"; do
+      local rn
+      for rn in "${dep_run_names[@]}"; do
         if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
           :
         elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
@@ -106,9 +235,8 @@ validate_dependency() {
     fi
 
   else
-    local -a dep_runs=()
-    expand_run_spec "$dep_run_spec" dep_runs
-    for rn in "${dep_runs[@]}"; do
+    local rn
+    for rn in "${dep_run_names[@]}"; do
       if [[ "$IGNORE_DEPS" == true && "$dep_in_invocation" != true ]]; then
         :
       elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
@@ -207,7 +335,7 @@ compute_stages() {
       local resolved=() r
       while IFS= read -r r; do
         [[ -n "$r" ]] && resolved+=("$r")
-      done < <(resolve_arg "$dep_task_path" "$REPOSITORY_ROOT")
+      done < <(resolve_arg "$dep_task_path")
 
       for r in "${resolved[@]}"; do
         validate_dependency "$occ_key" "$r" "$dep_run_spec" \
@@ -223,21 +351,7 @@ compute_stages() {
           fi
         else
           local -a dep_runs=()
-          if _has_wildcard_outside_braces "$dep_run_spec"; then
-            expand_run_spec_for_clean "$r" "$dep_run_spec" dep_runs
-            declare -A _dep_run_seen=()
-            local _p _td _rn
-            for _p in "${_task_run_pairs_ref[@]}"; do
-              _td="${_p%%	*}"
-              _rn="${_p#*	}"
-              if [[ "$_td" == "$r" ]] && [[ "$_rn" == $dep_run_spec ]] && [[ -z "${_dep_run_seen["$_rn"]+x}" ]]; then
-                dep_runs+=("$_rn")
-                _dep_run_seen["$_rn"]=1
-              fi
-            done
-          else
-            expand_run_spec "$dep_run_spec" dep_runs
-          fi
+          expand_dep_run_names "$r" "$dep_run_spec" _task_run_pairs_ref dep_runs
           local dep_rn dep_occ
           for dep_rn in "${dep_runs[@]}"; do
             dep_occ="${pair_to_last_occ["$r	$dep_rn"]:-}"

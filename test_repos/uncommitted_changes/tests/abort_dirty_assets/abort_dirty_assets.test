@@ -1,0 +1,12 @@
+# --no-uncommitted-changes aborts when ASSETS tree is dirty
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && rm -f "$TEST_WORKDIR/assets" && mkdir -p "$TEST_WORKDIR/assets" && git -C "$TEST_WORKDIR" add -A && git -C "$TEST_WORKDIR" commit -m seed
+EXIT: 0
+RUN: echo dirty > "$ASSETS/untracked_noise"
+EXIT: 0
+RUN_TASKS: --no-uncommitted-changes tasks/leaf
+EXIT: 1
+STDERR_CONTAINS: before invocation
+FILE_NOT_EXISTS: $TASKS/leaf/assets/.run_metadata
+FILE_NOT_EXISTS: $TASKS/leaf/assets/.run_begin
+FILE_NOT_EXISTS: $TASKS/leaf/assets/.run_failed
+FILE_NOT_EXISTS: $TASKS/leaf/assets/.run_success

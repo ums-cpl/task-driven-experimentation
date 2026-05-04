@@ -25,14 +25,16 @@ Optional suffix `:TASK_RUNS` overrides the task's `TASK_RUNS` (set in `task_meta
 **Options:**
 
 
-| Option              | Description                                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------------------- |
-| `--dry-run`         | Create manifest without running; print manifest contents to stdout                                |
-| `--clean`           | Remove output folders for specified tasks                                                         |
-| `--skip-succeeded`  | Skip task runs that have already succeeded (`.run_success` exists).                               |
-| `--skip-verify-def` | Skip verification that container image matches definition file                                    |
-| `--include-disabled`    | Run runs even if `RUN_DISABLED` is set in `run_meta.sh`                                           |
-| `--include-deps`    | Include missing dependency task runs in the invocation instead of failing                         |
+| Option                     | Description                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--dry-run`                | Create manifest without running; print manifest contents to stdout                                         |
+| `--clean`                  | Remove output folders for specified tasks                                                                  |
+| `--skip-succeeded`         | Skip task runs that have already succeeded (`.run_success` exists).                                        |
+| `--auto-commit`            | After each successful task run, git commit changes under that run’s folder                                 |
+| `--no-uncommitted-changes` | Abort a task run if git reports uncommitted changes under `assets/` or dependency run outputs of that task |
+| `--skip-verify-def`        | Skip verification that container image matches definition file                                             |
+| `--include-disabled`       | Run runs even if `RUN_DISABLED` is set in `run_meta.sh`                                                    |
+| `--include-deps`           | Include missing dependency task runs in the invocation instead of failing                                  |
 
 
 **Examples:**
@@ -137,6 +139,8 @@ A dependency is resolved if it is in the current invocation or already has a `.r
 
 Run folders are identified by framework marker files (`.run_script.sh`, `.run_begin`, `.run_success`, `.run_failed`, `.run_metadata`). These distinguish run output directories from task definition directories when resolving tasks.
 
+The `=== git ===` section of `.run_metadata` records `git_commit` (from `git rev-parse HEAD` when the repository root is a git work tree), then for `$ASSETS` and each resolved dependency run directory a `git status --porcelain -- "<path>"` listing (so changed paths are visible). The last lines in that section are `git_uncommitted_summary=clean|dirty` and `git_uncommitted_scopes=assets|dependencies|assets,dependencies`.
+
 ## Assets
 
 Assets hold the actual implementation of experiments. Structure is flexible; there is no predefined layout. Write outputs to the current working directory (which is `$RUN_FOLDER`) so the task framework manages data placement.
@@ -173,7 +177,7 @@ The script parses the manifest, filters to JOB blocks where `STAGE` matches `$3`
 
 where `<JOB>` is the manifest JOB id and `<INDEX>` is the 0-based run index within that job.
 
-**Manifest format:** Header: `SKIP_VERIFY_DEF` (true/false), then `---`. Then JOB blocks ordered by stage, separated by `---`. Each block:
+**Manifest format:** Header lines: `SKIP_VERIFY_DEF` (true/false); optional `AUTO_COMMIT=true`; optional `NO_UNCOMMITTED_CHANGES=true`; then `---`. Then JOB blocks ordered by stage, separated by `---`. Each block:
 
 - `JOB\t<id>` — unique job id
 - `STAGE\t<N>` — stage number

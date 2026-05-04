@@ -2,4 +2,6 @@ Bootstrap: docker
 From: python:3.12-slim
 
 %post
+    apt-get update
+    apt-get install -y git
     pip install --no-cache-dir matplotlib numpy

@@ -1,0 +1,11 @@
+# Dirty dependency run path before a later RUN_TASKS: full-invocation git check aborts early (no consumer .run_metadata).
+RUN: git -C "$TEST_WORKDIR" init -b main && git -C "$TEST_WORKDIR" config user.name "T" && git -C "$TEST_WORKDIR" config user.email "t@e" && rm -f "$TEST_WORKDIR/assets" && mkdir -p "$TEST_WORKDIR/assets" && git -C "$TEST_WORKDIR" add -A && git -C "$TEST_WORKDIR" commit -m seed
+EXIT: 0
+RUN_TASKS: tasks/producer
+EXIT: 0
+RUN: echo dirty > "$TASKS/producer/assets/dirty_dep_marker"
+EXIT: 0
+RUN_TASKS: --no-uncommitted-changes tasks/consumer
+EXIT: 1
+STDERR_CONTAINS: before invocation
+FILE_NOT_EXISTS: $TASKS/consumer/assets/.run_metadata

@@ -42,4 +42,11 @@ for __arg in "$@"; do
   fi
 done
 
+for __arg in "$@"; do
+  if [[ "$__arg" == "--no-uncommitted-changes" ]]; then
+    validate_git_repo_for_no_uncommitted_changes
+    break
+  fi
+done
+
 main "$@"

@@ -245,6 +245,95 @@ run_task() {
     fi
   fi
 
+  if ! declare -p TASK_RUN_PAIRS &>/dev/null; then
+    declare -a TASK_RUN_PAIRS=()
+  fi
+
+  local assets_rel
+  assets_rel=$(_abs_to_repo_rel "$ASSETS") || return 1
+  local -a dep_abs=()
+  collect_dep_run_abs_paths_for_task_run "$task_dir" "$run_name" TASK_RUN_PAIRS dep_abs || return 1
+  local -a dep_rels=()
+  declare -A _snap_seen=()
+  _snap_seen["$assets_rel"]=1
+  local d_abs d_rel
+  for d_abs in "${dep_abs[@]}"; do
+    d_rel=$(_abs_to_repo_rel "$d_abs") || continue
+    [[ -n "${_snap_seen[$d_rel]+x}" ]] && continue
+    _snap_seen["$d_rel"]=1
+    dep_rels+=("$d_rel")
+  done
+
+  local dep_paths_array_lines="" esc_rel
+  for d_abs in "${dep_abs[@]}"; do
+    d_rel=$(_abs_to_repo_rel "$d_abs") || continue
+    esc_rel=$(printf '%s' "$d_rel" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    dep_paths_array_lines+="    \"$esc_rel\""$'\n'
+  done
+
+  local dep_success_inject
+  if [[ ${#dep_rels[@]} -eq 0 ]]; then
+    dep_success_inject="  echo \"(none)\""
+  else
+    dep_success_inject="  for _drel in \"\${_dep_run_paths[@]}\"; do
+    if [[ ! -f \"\$REPOSITORY_ROOT/\$_drel/.run_success\" ]]; then
+      echo \"\$_drel: .run_success missing\"
+      abort_run=true
+    else
+      run_success_contents=\$(cat \"\$REPOSITORY_ROOT/\$_drel/.run_success\")
+      echo \"\$_drel: \$run_success_contents\"
+    fi
+  done"
+  fi
+
+  # Embed paths for git -- "path" inside the generated .run_script (escape for double quotes).
+  local q_assets q_dep git_snapshot_inject
+  q_assets=$(printf '%s' "$assets_rel" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  git_snapshot_inject="  _gs_dirty_assets=false
+  _gs_dirty_deps=false
+  echo \"--- git status porcelain: \\\$ASSETS ---\"
+  _por=\$(git -C \"\$REPOSITORY_ROOT\" status --porcelain -- \"$q_assets\" 2>/dev/null || true)
+  if [[ -n \"\$_por\" ]]; then
+    printf '%s\n' \"\$_por\"
+    _gs_dirty_assets=true
+  else
+    echo \"(no uncommitted changes)\"
+  fi
+  echo \"\"
+"
+  for d_rel in "${dep_rels[@]}"; do
+    q_dep=$(printf '%s' "$d_rel" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    git_snapshot_inject+="  echo \"--- git status porcelain: $q_dep ---\"
+  _por=\$(git -C \"\$REPOSITORY_ROOT\" status --porcelain -- \"$q_dep\" 2>/dev/null || true)
+  if [[ -n \"\$_por\" ]]; then
+    printf '%s\n' \"\$_por\"
+    _gs_dirty_deps=true
+  else
+    echo \"(no uncommitted changes)\"
+  fi
+  echo \"\"
+"
+  done
+  git_snapshot_inject+="  if [[ \"\$_gs_dirty_assets\" != true ]] && [[ \"\$_gs_dirty_deps\" != true ]]; then
+    echo \"git_uncommitted_summary=clean\"
+    echo \"git_uncommitted_scopes=\"
+    echo \"git_uncommitted_ASSETS=no uncommitted changes\"
+    echo \"git_uncommitted_dependency_paths=no uncommitted changes\"
+  elif [[ \"\$_gs_dirty_assets\" == true ]] && [[ \"\$_gs_dirty_deps\" == true ]]; then
+    echo \"git_uncommitted_summary=dirty\"
+    echo \"git_uncommitted_scopes=assets,dependencies\"
+  elif [[ \"\$_gs_dirty_assets\" == true ]]; then
+    echo \"git_uncommitted_summary=dirty\"
+    echo \"git_uncommitted_scopes=assets\"
+  else
+    echo \"git_uncommitted_summary=dirty\"
+    echo \"git_uncommitted_scopes=dependencies\"
+  fi
+  echo \"\"
+"
+
+  local nuc_embed="${NO_UNCOMMITTED_CHANGES:-false}"
+
   # Build overrides section for .run_metadata (embed KEY=VALUE lines in generated script)
   local overrides_meta=""
   local ov
@@ -275,8 +364,14 @@ export REPOSITORY_ROOT="$REPOSITORY_ROOT"
 export TASK_FOLDER="$task_dir"
 export RUN_FOLDER="$run_folder"
 
+_dep_run_paths=(
+$dep_paths_array_lines)
+
 # Remove all files in run folder except this script
 find "\$RUN_FOLDER" -mindepth 1 -maxdepth 1 ! -name '.run_script.sh' -exec rm -rf {} +
+
+# Record run begin time
+date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_begin"
 
 # Source task_meta.sh chain (task configuration, e.g. TASK_RUNS)
 $source_cmds_meta
@@ -298,16 +393,21 @@ $source_cmds_run_env
 
 exec > >(tee "\$RUN_FOLDER/.run_output.log") 2>&1
 cd "\$RUN_FOLDER"
+abort_run=false
 {
+  echo "=== dependencies ==="
+$dep_success_inject
+  echo ""
   echo "=== git ==="
-  if [[ -n "\${REPOSITORY_ROOT:-}" ]] && git -C "\$REPOSITORY_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-    git -C "\$REPOSITORY_ROOT" status 2>/dev/null || true
-    echo "---"
-    git -C "\$REPOSITORY_ROOT" rev-parse HEAD 2>/dev/null || true
+  if git -C "\$REPOSITORY_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
+    echo -n "git_commit="
+    git -C "\$REPOSITORY_ROOT" rev-parse HEAD 2>/dev/null || echo unknown
+    echo ""
   else
-    echo "not a git repository"
+    echo "git_commit=not_a_git_repository"
   fi
   echo ""
+$git_snapshot_inject
   echo "=== overrides ==="
 $overrides_meta  echo ""
 
@@ -354,7 +454,25 @@ $overrides_meta  echo ""
     echo "N/A"
   fi
 } > "\$RUN_FOLDER/.run_metadata"
-date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_begin"
+if [[ "\$abort_run" == true ]]; then
+  echo "Error: dependencies not met; refusing to start this task run." >&2
+  date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_failed"
+  exit 1
+fi
+if [[ "$nuc_embed" == true ]]; then
+  if [[ "\$_gs_dirty_assets" == true ]] || [[ "\$_gs_dirty_deps" == true ]]; then
+    echo "Error: --no-uncommitted-changes: uncommitted changes under ASSETS and/or dependency run outputs; refusing to start this task run." >&2
+    date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_failed"
+    exit 1
+  else
+    {
+      echo ""
+      echo "--- no-uncommitted-changes ---"
+      echo "no_uncommitted_changes_check=passed"
+      echo "no_uncommitted_changes_note=no uncommitted changes under scoped ASSETS and dependency run paths"
+    } >> "\$RUN_FOLDER/.run_metadata"
+  fi
+fi
 set +e
 ( set -e; . "$task_dir/run.sh" )
 task_exit=\$?
@@ -380,7 +498,7 @@ is_direct_wm() {
 }
 
 # Creates a single manifest file. Group by (stage, WORKLOAD_NAME, WORKLOAD_MANAGER).
-# Format: header (SKIP_VERIFY_DEF, optional AUTO_COMMIT=true, ---), then JOB blocks with STAGE, WORKLOAD_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
+# Format: header (SKIP_VERIFY_DEF, optional AUTO_COMMIT=true, optional NO_UNCOMMITTED_CHANGES=true, ---), then JOB blocks with STAGE, WORKLOAD_NAME, WORKLOAD_MANAGER, DEPENDS, task lines.
 # Errors if both direct.sh and other WMs appear (mixing not supported).
 # When RUN_TASKS_PRECOMPUTED_TASK_STAGE and RUN_TASKS_PRECOMPUTED_MAX_STAGE are set, uses them.
 create_manifest() {
@@ -558,6 +676,7 @@ create_manifest() {
   print_manifest_content() {
     echo "SKIP_VERIFY_DEF=$SKIP_VERIFY_DEF"
     [[ "$AUTO_COMMIT" == true ]] && echo "AUTO_COMMIT=true"
+    [[ "$NO_UNCOMMITTED_CHANGES" == true ]] && echo "NO_UNCOMMITTED_CHANGES=true"
     echo "---"
     local key task_dir run_name overrides dep_list prev_stage i block_started=false
     for key in "${emitted_keys[@]}"; do
@@ -656,6 +775,9 @@ run_array_task() {
     fi
     if [[ "$line" == AUTO_COMMIT=* ]]; then
       AUTO_COMMIT="${line#AUTO_COMMIT=}"
+    fi
+    if [[ "$line" == NO_UNCOMMITTED_CHANGES=* ]]; then
+      NO_UNCOMMITTED_CHANGES="${line#NO_UNCOMMITTED_CHANGES=}"
     fi
   done < "$manifest"
 

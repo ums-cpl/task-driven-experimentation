@@ -3,4 +3,4 @@ From: debian:stable-slim
 
 %post
     apt-get update
-    apt-get install -y g++
+    apt-get install -y g++ git

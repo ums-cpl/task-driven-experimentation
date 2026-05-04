@@ -126,6 +126,10 @@ main() {
       build_task_run_pairs
     done
 
+    if [[ "${NO_UNCOMMITTED_CHANGES:-false}" == true && "${DRY_RUN:-false}" != true ]]; then
+      assert_scoped_git_clean_for_full_invocation
+    fi
+
     # Store precomputed stages in globals for create_manifest (runs in subshell via command substitution)
     declare -A RUN_TASKS_PRECOMPUTED_TASK_STAGE
     for k in "${!task_stage[@]}"; do

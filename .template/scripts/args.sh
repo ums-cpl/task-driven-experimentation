@@ -15,19 +15,20 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
   Quote the task spec if TASK_RUNS contains * or ? (e.g. "tasks/task1:run*").
 
 Options:
-  --dry-run              Create manifest without running (no workload manager invoke)
-  --clean                Remove output folders for specified tasks, do not run
-  --exclude TASK         Exclude previously selected task runs
-  --skip-succeeded       Skip task runs that have already succeeded (.run_success exists)
-  --auto-commit          After each successful task run, git commit changes under that run's folder
-  --skip-verify-def      Skip verification that container image matches definition file
-  --include-disabled     Run runs even if RUN_DISABLED is set in run_meta.sh
-  --include-deps         Include missing dependency task runs in the invocation instead of failing
-  --ignore-deps          Ignore dependencies outside the invocation; still stage dependencies within selected tasks
-  --direct               Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
-  --status               Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
-  --status-manifest=FILE Show exit states for all task runs listed in FILE (manifest from a prior run)
-  -h, --help             Show this help
+  --dry-run                Create manifest without running (no workload manager invoke)
+  --clean                  Remove output folders for specified tasks, do not run
+  --exclude TASK           Exclude previously selected task runs
+  --skip-succeeded         Skip task runs that have already succeeded (.run_success exists)
+  --auto-commit            After each successful task run, git commit changes under that run's folder
+  --no-uncommitted-changes Abort a task run if git reports uncommitted changes under \$ASSETS or dependency runs of that task run
+  --skip-verify-def        Skip verification that container image matches definition file
+  --include-disabled       Run runs even if RUN_DISABLED is set in run_meta.sh
+  --include-deps           Include missing dependency task runs in the invocation instead of failing
+  --ignore-deps            Ignore dependencies outside the invocation; still stage dependencies within selected tasks
+  --direct                 Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
+  --status                 Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
+  --status-manifest=FILE   Show exit states for all task runs listed in FILE (manifest from a prior run)
+  -h, --help               Show this help
 
 Environment overrides (KEY=VALUE) are applied after each sourced file (task_meta.sh, run_meta.sh, run_env.sh, run_deps.sh), pinning overridden values so every subsequent file sees them.
 EOF
@@ -94,6 +95,10 @@ parse_args() {
         ;;
       --auto-commit)
         AUTO_COMMIT=true
+        shift
+        ;;
+      --no-uncommitted-changes)
+        NO_UNCOMMITTED_CHANGES=true
         shift
         ;;
       --skip-verify-def)
