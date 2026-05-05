@@ -25,6 +25,7 @@ Options:
   --include-disabled       Run runs even if RUN_DISABLED is set in run_meta.sh
   --include-deps           Include missing dependency task runs in the invocation instead of failing
   --ignore-deps            Ignore dependencies outside the invocation; still stage dependencies within selected tasks
+  --skip-unsatisfied-deps  Skip task runs with unsatisfied dependencies (including transitive dependents)
   --direct                 Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
   --status                 Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE   Show exit states for all task runs listed in FILE (manifest from a prior run)
@@ -115,6 +116,10 @@ parse_args() {
         ;;
       --ignore-deps)
         IGNORE_DEPS=true
+        shift
+        ;;
+      --skip-unsatisfied-deps)
+        SKIP_UNSATISFIED_DEPS=true
         shift
         ;;
       --direct)

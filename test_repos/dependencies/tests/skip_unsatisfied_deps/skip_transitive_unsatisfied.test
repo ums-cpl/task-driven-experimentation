@@ -1,0 +1,8 @@
+# --skip-unsatisfied-deps prunes transitive dependents
+RUN_TASKS: --dry-run --skip-unsatisfied-deps tasks/top tasks/middle
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+END_STDOUT

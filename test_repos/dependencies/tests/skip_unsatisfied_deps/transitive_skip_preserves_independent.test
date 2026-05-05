@@ -1,0 +1,14 @@
+# --skip-unsatisfied-deps prunes transitive dependents and keeps independent runs
+RUN_TASKS: --dry-run --skip-unsatisfied-deps tasks/top tasks/indep
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/indep
+END_STDOUT

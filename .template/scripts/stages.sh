@@ -162,6 +162,7 @@ validate_dependency() {
   local -n _missing_deps=$7
   local -n _missing_count_ref=$8
   local -n _dep_checks=$9
+  local -n _unsatisfied_occ=${10}
   local task_dir="${occ_key%	OCC:*}"
   local dep_in_invocation=false
   [[ -n "${_inv_task_set["$dep_task_dir"]+x}" ]] && dep_in_invocation=true
@@ -199,8 +200,12 @@ validate_dependency() {
       if [[ "$resolved_ok" != true ]]; then
         local rel_task="${task_dir#$TASKS/}"
         local rel_dep="${dep_task_dir#$TASKS/}"
-        _missing_deps["tasks/$rel_dep"]="${_missing_deps["tasks/$rel_dep"]:+${_missing_deps["tasks/$rel_dep"]}, }tasks/$rel_task"
-        _missing_count_ref=$((_missing_count_ref + 1))
+        if [[ "$SKIP_UNSATISFIED_DEPS" == true ]] && [[ "$INCLUDE_DEPS" != true ]]; then
+          _unsatisfied_occ["$occ_key"]=1
+        else
+          _missing_deps["tasks/$rel_dep"]="${_missing_deps["tasks/$rel_dep"]:+${_missing_deps["tasks/$rel_dep"]}, }tasks/$rel_task"
+          _missing_count_ref=$((_missing_count_ref + 1))
+        fi
       fi
     fi
     if [[ "$dep_in_invocation" == true ]]; then
@@ -215,8 +220,12 @@ validate_dependency() {
       local rel_task="${task_dir#$TASKS/}"
       local rel_dep="${dep_task_dir#$TASKS/}"
       local dep_label="tasks/$rel_dep:$dep_run_spec (no matching run folders on disk)"
-      _missing_deps["$dep_label"]="${_missing_deps["$dep_label"]:+${_missing_deps["$dep_label"]}, }tasks/$rel_task"
-      _missing_count_ref=$((_missing_count_ref + 1))
+      if [[ "$SKIP_UNSATISFIED_DEPS" == true ]] && [[ "$INCLUDE_DEPS" != true ]]; then
+        _unsatisfied_occ["$occ_key"]=1
+      else
+        _missing_deps["$dep_label"]="${_missing_deps["$dep_label"]:+${_missing_deps["$dep_label"]}, }tasks/$rel_task"
+        _missing_count_ref=$((_missing_count_ref + 1))
+      fi
     else
       local rn
       for rn in "${dep_run_names[@]}"; do
@@ -225,8 +234,12 @@ validate_dependency() {
         elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
           local rel_task="${task_dir#$TASKS/}"
           local rel_dep="${dep_task_dir#$TASKS/}"
-          _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
-          _missing_count_ref=$((_missing_count_ref + 1))
+          if [[ "$SKIP_UNSATISFIED_DEPS" == true ]] && [[ "$INCLUDE_DEPS" != true ]]; then
+            _unsatisfied_occ["$occ_key"]=1
+          else
+            _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
+            _missing_count_ref=$((_missing_count_ref + 1))
+          fi
         fi
         if [[ "$dep_in_invocation" == true ]]; then
           _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
@@ -242,8 +255,12 @@ validate_dependency() {
       elif [[ -z "${_inv_pair_set["$dep_task_dir	$rn"]+x}" ]] && { [[ "$INCLUDE_DEPS" == true ]] || [[ ! -f "$dep_task_dir/$rn/.run_success" ]]; }; then
         local rel_task="${task_dir#$TASKS/}"
         local rel_dep="${dep_task_dir#$TASKS/}"
-        _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
-        _missing_count_ref=$((_missing_count_ref + 1))
+        if [[ "$SKIP_UNSATISFIED_DEPS" == true ]] && [[ "$INCLUDE_DEPS" != true ]]; then
+          _unsatisfied_occ["$occ_key"]=1
+        else
+          _missing_deps["tasks/$rel_dep:$rn"]="${_missing_deps["tasks/$rel_dep:$rn"]:+${_missing_deps["tasks/$rel_dep:$rn"]}, }tasks/$rel_task"
+          _missing_count_ref=$((_missing_count_ref + 1))
+        fi
       fi
       if [[ "$dep_in_invocation" == true ]]; then
         _dep_checks["$occ_key"]+="RUN	$dep_task_dir	$rn"$'\n'
@@ -284,6 +301,7 @@ compute_stages() {
   declare -A deps
   declare -A dep_edges_added
   declare -A missing_deps
+  declare -A unsatisfied_occ=()
   local missing_count=0
   local dep_entry
 
@@ -340,7 +358,7 @@ compute_stages() {
       for r in "${resolved[@]}"; do
         validate_dependency "$occ_key" "$r" "$dep_run_spec" \
           invocation_pair_set invocation_task_set _task_run_pairs_ref \
-          missing_deps missing_count _task_dep_checks
+          missing_deps missing_count _task_dep_checks unsatisfied_occ
         [[ -z "${invocation_task_set["$r"]+x}" ]] && continue
         if [[ -z "$dep_run_spec" ]]; then
           local dep_occ="${task_dir_to_last_occ["$r"]}"
@@ -366,6 +384,56 @@ compute_stages() {
       done
     done
   done
+
+  if [[ "$SKIP_UNSATISFIED_DEPS" == true ]] && [[ "$INCLUDE_DEPS" != true ]]; then
+    local changed=true
+    while [[ "$changed" == true ]]; do
+      changed=false
+      for occ_key in "${_tasks[@]}"; do
+        [[ -n "${unsatisfied_occ["$occ_key"]+x}" ]] && continue
+        local dep
+        while IFS= read -r dep; do
+          [[ -z "$dep" ]] && continue
+          if [[ -n "${unsatisfied_occ["$dep"]+x}" ]]; then
+            unsatisfied_occ["$occ_key"]=1
+            changed=true
+            break
+          fi
+        done <<< "${deps["$occ_key"]}"
+      done
+    done
+
+    if [[ ${#unsatisfied_occ[@]} -gt 0 ]]; then
+      local -a kept_tasks=()
+      local -a kept_pairs=()
+      local -a kept_occ_keys=()
+      local -a kept_overrides=()
+      local -a kept_wm=()
+      local -a kept_wname=()
+      local i pair_occ
+      for ((i=0; i<${#_task_run_pairs_ref[@]}; i++)); do
+        pair_occ="${TASK_RUN_PAIR_OCC_KEYS[$i]:-}"
+        if [[ -n "${unsatisfied_occ["$pair_occ"]+x}" ]]; then
+          continue
+        fi
+        kept_pairs+=("${_task_run_pairs_ref[$i]}")
+        kept_occ_keys+=("$pair_occ")
+        kept_overrides+=("${TASK_RUN_PAIR_OVERRIDES[$i]:-}")
+        kept_wm+=("${TASK_RUN_PAIR_WM[$i]:-}")
+        kept_wname+=("${TASK_RUN_PAIR_WORKLOAD_NAME[$i]:-}")
+      done
+      for occ_key in "${_tasks[@]}"; do
+        [[ -n "${unsatisfied_occ["$occ_key"]+x}" ]] && continue
+        kept_tasks+=("$occ_key")
+      done
+      _tasks=("${kept_tasks[@]}")
+      _task_run_pairs_ref=("${kept_pairs[@]}")
+      TASK_RUN_PAIR_OCC_KEYS=("${kept_occ_keys[@]}")
+      TASK_RUN_PAIR_OVERRIDES=("${kept_overrides[@]}")
+      TASK_RUN_PAIR_WM=("${kept_wm[@]}")
+      TASK_RUN_PAIR_WORKLOAD_NAME=("${kept_wname[@]}")
+    fi
+  fi
 
   if [[ $missing_count -gt 0 ]]; then
     if [[ "$INCLUDE_DEPS" == true ]]; then
