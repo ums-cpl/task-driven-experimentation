@@ -2,6 +2,8 @@
 # Configuration variables. REPOSITORY_ROOT, TEMPLATE, TASKS, ASSETS, WORKLOAD_MANAGERS, CONTAINER_MANAGERS
 # are set by run_tasks.sh before sourcing.
 
+TEMPLATE_VERSION="0.0.1"
+
 declare -a TASK_SPECS=()
 declare -a TASK_SPEC_OVERRIDES=()
 declare -a TASK_SPEC_ACTIONS=()

@@ -29,6 +29,7 @@ Options:
   --direct                 Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
   --status                 Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE   Show exit states for all task runs listed in FILE (manifest from a prior run)
+  --version                Print version and exit
   -h, --help               Show this help
 
 Environment overrides (KEY=VALUE) are applied after each sourced file (task_meta.sh, run_meta.sh, run_env.sh, run_deps.sh), pinning overridden values so every subsequent file sees them.
@@ -133,6 +134,10 @@ parse_args() {
       --status-manifest=*)
         STATUS_MANIFEST="${1#--status-manifest=}"
         shift
+        ;;
+      --version)
+        printf '%s\n' "${TEMPLATE_VERSION}"
+        exit 0
         ;;
       -h|--help)
         usage

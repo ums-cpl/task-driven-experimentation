@@ -395,6 +395,9 @@ exec > >(tee "\$RUN_FOLDER/.run_output.log") 2>&1
 cd "\$RUN_FOLDER"
 abort_run=false
 {
+  echo "=== template ==="
+  echo "template_version=${TEMPLATE_VERSION}"
+  echo ""
   echo "=== dependencies ==="
 $dep_success_inject
   echo ""
