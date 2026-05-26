@@ -108,7 +108,7 @@ wm_get_manifest_task_line() {
 # Default SLURM sbatch template: prints the full sbatch script for one job.
 # Args: JID ARRAY_MAX DEP_LINE GRES_LINE WORKLOAD_NAME
 # Uses from environment: MANIFEST, LOG_DIR, SBATCH_PARTITION, SBATCH_CPUS_PER_TASK,
-#   SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES.
+#   SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES, SBATCH_EXCLUDE.
 _wm_slurm_default_sbatch() {
   local jid="$1" array_max="$2" dep_line="$3" gres_line="$4" workload_name_val="$5"
   local apptainer_module="${APPTAINER_MODULE:-Apptainer}"
@@ -119,6 +119,7 @@ _wm_slurm_default_sbatch() {
   echo "#SBATCH --cpus-per-task=${SBATCH_CPUS_PER_TASK}"
   echo "#SBATCH --mem=${SBATCH_MEM}"
   echo "#SBATCH --time=${SBATCH_TIME:-2:00:00}"
+  [[ -n "${SBATCH_EXCLUDE:-}" ]] && echo "#SBATCH --exclude=${SBATCH_EXCLUDE}"
   echo "#SBATCH --kill-on-invalid-dep=yes"
   echo "#SBATCH --job-name=\"${workload_name_val} (Job ${jid})\""
   echo "#SBATCH --output=${LOG_DIR}/job${jid}_%a.log"
@@ -138,7 +139,7 @@ _wm_slurm_default_sbatch() {
 
 # Submit SLURM jobs for the current stage.
 # Uses from environment: REPOSITORY_ROOT, MANIFEST, LOG_DIR, SBATCH_PARTITION,
-#   SBATCH_CPUS_PER_TASK, SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES.
+#   SBATCH_CPUS_PER_TASK, SBATCH_MEM, SBATCH_TIME (default 2:00:00), and optionally SBATCH_GRES, SBATCH_EXCLUDE.
 # The script that sourced this file is used as the WM identity (only its JOBs are submitted).
 #
 # Usage: wm_slurm_submit_stage MANIFEST LOG_DIR STAGE [TEMPLATE_FN]
