@@ -137,7 +137,7 @@ A dependency is resolved if it is in the current invocation or already has a `.r
 
 **`run.sh`** -- Leaf-only (one per task, required). The entry point for execution; invokes code from `assets/`. Has task_meta.sh, run_meta.sh, and run_env.sh chains available (and `RUN_ID`).
 
-Run folders are identified by framework marker files (`.run_script.sh`, `.run_begin`, `.run_success`, `.run_failed`, `.run_metadata`). These distinguish run output directories from task definition directories when resolving tasks.
+Run folders are identified by framework marker files (`.run_script.sh`, `.run_begin`, `.run_success`, `.run_failed`, `.run_metadata`). These distinguish run output directories from task definition directories when resolving tasks. `.run_begin`, `.run_success`, and `.run_failed` each contain one UTC timestamp line (`YYYY-MM-DD HH:MM:SS UTC`).
 
 The `=== git ===` section of `.run_metadata` records `git_commit` (from `git rev-parse HEAD` when the repository root is a git work tree), then for `$ASSETS` and each resolved dependency run directory a `git status --porcelain -- "<path>"` listing (so changed paths are visible). The last lines in that section are `git_uncommitted_summary=clean|dirty` and `git_uncommitted_scopes=assets|dependencies|assets,dependencies`.
 

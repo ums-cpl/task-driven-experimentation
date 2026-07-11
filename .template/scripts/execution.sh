@@ -371,7 +371,7 @@ $dep_paths_array_lines)
 find "\$RUN_FOLDER" -mindepth 1 -maxdepth 1 ! -name '.run_script.sh' -exec rm -rf {} +
 
 # Record run begin time
-date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_begin"
+date -u "+%Y-%m-%d %H:%M:%S UTC" > "\$RUN_FOLDER/.run_begin"
 
 # Source task_meta.sh chain (task configuration, e.g. TASK_RUNS)
 $source_cmds_meta
@@ -459,13 +459,13 @@ $overrides_meta  echo ""
 } > "\$RUN_FOLDER/.run_metadata"
 if [[ "\$abort_run" == true ]]; then
   echo "Error: dependencies not met; refusing to start this task run." >&2
-  date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_failed"
+  date -u "+%Y-%m-%d %H:%M:%S UTC" > "\$RUN_FOLDER/.run_failed"
   exit 1
 fi
 if [[ "$nuc_embed" == true ]]; then
   if [[ "\$_gs_dirty_assets" == true ]] || [[ "\$_gs_dirty_deps" == true ]]; then
     echo "Error: --no-uncommitted-changes: uncommitted changes under ASSETS and/or dependency run outputs; refusing to start this task run." >&2
-    date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_failed"
+    date -u "+%Y-%m-%d %H:%M:%S UTC" > "\$RUN_FOLDER/.run_failed"
     exit 1
   else
     {
@@ -481,9 +481,9 @@ set +e
 task_exit=\$?
 set -e
 if [[ \$task_exit -eq 0 ]]; then
-  date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_success"
+  date -u "+%Y-%m-%d %H:%M:%S UTC" > "\$RUN_FOLDER/.run_success"
 else
-  date "+%Y-%m-%d %H:%M:%S %Z" > "\$RUN_FOLDER/.run_failed"
+  date -u "+%Y-%m-%d %H:%M:%S UTC" > "\$RUN_FOLDER/.run_failed"
   exit \$task_exit
 fi
 RUNNER_SCRIPT
