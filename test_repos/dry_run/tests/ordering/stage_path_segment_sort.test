@@ -1,0 +1,19 @@
+# Runs in a stage are sorted alphabetically per path segment
+RUN_TASKS: --dry-run tasks/bc/hi tasks/bc/gh tasks/bc/fg tasks/abc/hij tasks/abc/ghi tasks/abc/fgh
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks: tasks/*
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/abc/fgh
+1	assets	tasks/abc/ghi
+2	assets	tasks/abc/hij
+3	assets	tasks/bc/fg
+4	assets	tasks/bc/gh
+5	assets	tasks/bc/hi
+END_STDOUT

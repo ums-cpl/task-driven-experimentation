@@ -10,7 +10,7 @@ STAGE	0
 WORKLOAD_NAME	run_tasks: IS1/*
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
-0	assets	tasks/experiment/MatMul/IS1/TVM/bench
+0	assets	tasks/experiment/MatMul/IS1/cuBLAS
 1	assets	tasks/experiment/MatMul/IS1/PPCG/bench
-2	assets	tasks/experiment/MatMul/IS1/cuBLAS
+2	assets	tasks/experiment/MatMul/IS1/TVM/bench
 END_STDOUT

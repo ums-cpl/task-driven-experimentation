@@ -73,6 +73,41 @@ _segments_to_path() {
   echo "$joined"
 }
 
+# Build a sort key that compares paths segment-by-segment, case-insensitively
+# (matching typical filesystem directory order under UTF-8 locales).
+_path_to_segment_sort_key() {
+  local path="$1"
+  local -a segs=()
+  local key="" seg
+  _path_to_segments "$path" segs
+  for seg in "${segs[@]}"; do
+    key+=$'\001'"${seg,,}"
+  done
+  echo "$key"
+}
+
+# Sort pair indices by repo-relative task path (segment-wise), then run name.
+_sort_task_run_pair_indices_by_path() {
+  local -n _indices=$1
+  local -n _pairs=$2
+  [[ ${#_indices[@]} -le 1 ]] && return 0
+  local -a sorted=()
+  local idx pair task_dir run_name task_path sort_key
+  while IFS= read -r idx; do
+    [[ -n "$idx" ]] && sorted+=("$idx")
+  done < <(
+    for idx in "${_indices[@]}"; do
+      pair="${_pairs[$idx]}"
+      task_dir="${pair%%	*}"
+      run_name="${pair#*	}"
+      task_path="$(_abs_to_repo_rel "$task_dir")"
+      sort_key="$(_path_to_segment_sort_key "$task_path")"
+      printf '%s\t%s\t%s\n' "$sort_key" "${run_name,,}" "$idx"
+    done | LC_ALL=C sort -t $'\t' -k1,1 -k2,2 | cut -f3-
+  )
+  _indices=("${sorted[@]}")
+}
+
 _longest_common_segment_prefix() {
   local -n _paths=$1
   local -a ref_segments=() cmp_segments=() prefix_segments=()
@@ -701,6 +736,7 @@ create_manifest() {
         to_emit+=("$idx")
       done
       [[ ${#to_emit[@]} -eq 0 ]] && continue
+      _sort_task_run_pair_indices_by_path to_emit _task_run_pairs
 
       echo "JOB	$job_id"
       echo "STAGE	$stage"

@@ -10,6 +10,6 @@ STAGE	0
 WORKLOAD_NAME	run_tasks: tasks/*
 WORKLOAD_MANAGER	.template/workload_managers/direct.sh
 DEPENDS	
-0	assets	tasks/direct_task
-1	assets	tasks/also_direct
+0	assets	tasks/also_direct
+1	assets	tasks/direct_task
 END_STDOUT
