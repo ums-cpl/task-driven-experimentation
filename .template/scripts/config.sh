@@ -15,6 +15,7 @@ declare -a TASK_RUN_PAIR_WORKLOAD_NAME=()
 declare -a TASK_OCC_KEYS=()
 declare -a TASKS_UNIQUE=()
 DRY_RUN=false
+PREVIEW=false
 CLEAN=false
 SKIP_SUCCEEDED=false
 SKIP_VERIFY_DEF=false

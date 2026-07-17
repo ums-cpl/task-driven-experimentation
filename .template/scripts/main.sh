@@ -150,6 +150,28 @@ main() {
       echo "All tasks already succeeded, nothing to submit."
       exit 0
     fi
+
+    # Preview: show the created manifest, prompt to confirm (default no), then run if yes
+    if [[ "$PREVIEW" == true ]]; then
+      cat "$manifest_path"
+      local preview_answer=""
+      echo "" >&2
+      if [[ -t 0 ]]; then
+        printf 'Run this manifest? [y/N] ' >&2
+      else
+        echo "Run this manifest? [y/N] (non-interactive: reply on stdin; default no)" >&2
+      fi
+      read -r preview_answer || true
+      case "$preview_answer" in
+        y|Y|yes|YES|Yes) ;;
+        *)
+          echo "Aborted." >&2
+          rm -rf "$(dirname "$manifest_path")"
+          exit 0
+          ;;
+      esac
+    fi
+
     log_dir="$(dirname "$manifest_path")"
     # Export injected roots for workload managers (direct and cluster modes).
     export REPOSITORY_ROOT TASKS ASSETS TEMPLATE RUN_TASKS_SCRIPT

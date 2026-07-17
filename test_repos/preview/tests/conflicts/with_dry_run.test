@@ -1,0 +1,7 @@
+# --preview and --dry-run cannot be combined
+RUN_TASKS: --preview --dry-run tasks/trivial
+EXIT: 1
+STDERR:
+Error: --preview and --dry-run cannot be used together
+Use --help for usage.
+END_STDERR

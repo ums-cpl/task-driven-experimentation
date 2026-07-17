@@ -1,0 +1,8 @@
+# --preview with n on stdin prints the manifest and does not run
+RUN: printf 'n\n' | ./run_tasks.sh --preview tasks/trivial
+EXIT: 0
+STDOUT_CONTAINS: JOB	0
+STDOUT_CONTAINS: 0	assets	tasks/trivial
+STDERR_CONTAINS: Aborted.
+FILE_NOT_EXISTS: $TASKS/trivial/assets/.run_success
+FILE_NOT_EXISTS: $TEST_WORKDIR/workload_logs/run_tasks

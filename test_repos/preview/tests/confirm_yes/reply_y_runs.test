@@ -1,0 +1,7 @@
+# --preview with y on stdin prints the manifest then runs
+RUN: printf 'y\n' | ./run_tasks.sh --preview tasks/trivial
+EXIT: 0
+STDOUT_CONTAINS: JOB	0
+STDOUT_CONTAINS: 0	assets	tasks/trivial
+STDOUT_CONTAINS: Running 1 task(s) with a total of 1 run(s) in 1 stage(s).
+FILE_EXISTS: $TASKS/trivial/assets/.run_success

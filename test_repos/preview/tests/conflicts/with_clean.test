@@ -1,0 +1,7 @@
+# --preview and --clean cannot be combined
+RUN_TASKS: --preview --clean tasks/trivial
+EXIT: 1
+STDERR:
+Error: --preview and --clean cannot be used together
+Use --help for usage.
+END_STDERR

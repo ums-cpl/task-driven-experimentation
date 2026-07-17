@@ -1,0 +1,19 @@
+# --preview with empty stdin prints the manifest and aborts (default no)
+RUN_TASKS: --preview tasks/trivial
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+JOB	0
+STAGE	0
+WORKLOAD_NAME	run_tasks
+WORKLOAD_MANAGER	.template/workload_managers/direct.sh
+DEPENDS	
+0	assets	tasks/trivial
+END_STDOUT
+STDERR_CONTAINS: Run this manifest? [y/N]
+STDERR_CONTAINS: Aborted.
+FILE_NOT_EXISTS: $TASKS/trivial/assets/.run_success
+FILE_NOT_EXISTS: $TEST_WORKDIR/workload_logs/run_tasks/manifest
+FILE_NOT_EXISTS: $TEST_WORKDIR/workload_logs/run_tasks

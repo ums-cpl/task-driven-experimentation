@@ -28,6 +28,7 @@ Optional suffix `:TASK_RUNS` overrides the task's `TASK_RUNS` (set in `task_meta
 | Option                     | Description                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `--dry-run`                | Create manifest without running; print manifest contents to stdout                                         |
+| `--preview`                | Create manifest, print it, then prompt to confirm before running (default: no)                             |
 | `--clean`                  | Remove output folders for specified tasks                                                                  |
 | `--skip-succeeded`         | Skip task runs that have already succeeded (`.run_success` exists).                                        |
 | `--auto-commit`            | After each successful task run, git commit changes under that run’s folder                                 |

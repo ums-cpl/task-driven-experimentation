@@ -16,6 +16,7 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
 
 Options:
   --dry-run                Create manifest without running (no workload manager invoke)
+  --preview                Create manifest, print it, then prompt to confirm before running (default: no)
   --clean                  Remove output folders for specified tasks, do not run
   --exclude TASK           Exclude previously selected task runs
   --skip-succeeded         Skip task runs that have already succeeded (.run_success exists)
@@ -56,6 +57,10 @@ parse_args() {
     case "$1" in
       --dry-run)
         DRY_RUN=true
+        shift
+        ;;
+      --preview)
+        PREVIEW=true
         shift
         ;;
       --clean)
@@ -165,4 +170,15 @@ parse_args() {
         ;;
     esac
   done
+
+  if [[ "$PREVIEW" == true && "$DRY_RUN" == true ]]; then
+    echo "Error: --preview and --dry-run cannot be used together" >&2
+    echo "Use --help for usage." >&2
+    exit 1
+  fi
+  if [[ "$PREVIEW" == true && "$CLEAN" == true ]]; then
+    echo "Error: --preview and --clean cannot be used together" >&2
+    echo "Use --help for usage." >&2
+    exit 1
+  fi
 }

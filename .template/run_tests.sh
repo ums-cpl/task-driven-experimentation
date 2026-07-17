@@ -198,7 +198,8 @@ invoke_run_tasks() {
     cd "$WORK_ROOT" 2>/dev/null || true
     # shellcheck disable=SC2086
     eval "set -- $args_str"
-    "$run_sh" "$@"
+    # Close stdin so interactive flags (e.g. --preview) do not hang the suite.
+    "$run_sh" "$@" </dev/null
   ) >"$out" 2>"$err"
 
   LAST_EXIT=$?
