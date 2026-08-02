@@ -224,11 +224,13 @@ run_task() {
 
   # Resolve container and manager from run_meta.sh chain (with RUN_ID)
   local container_path container_def container_gpu container_flags container_manager_rel
-  container_path=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER" | xargs)
-  container_def=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_DEF" | xargs)
-  container_gpu=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_GPU" | xargs)
-  container_flags=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_FLAGS" | xargs)
-  container_manager_rel=$(resolve_run_var "$task_dir" "$run_name" "RUN_CONTAINER_MANAGER" | xargs)
+  resolve_run_vars "$task_dir" "$run_name" \
+    RUN_CONTAINER RUN_CONTAINER_DEF RUN_CONTAINER_GPU RUN_CONTAINER_FLAGS RUN_CONTAINER_MANAGER
+  container_path=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_CONTAINER]-}" | xargs)
+  container_def=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_CONTAINER_DEF]-}" | xargs)
+  container_gpu=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_CONTAINER_GPU]-}" | xargs)
+  container_flags=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_CONTAINER_FLAGS]-}" | xargs)
+  container_manager_rel=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_CONTAINER_MANAGER]-}" | xargs)
   if [[ -z "$container_manager_rel" ]]; then
     container_manager_script="$TEMPLATE/container_managers/apptainer.sh"
   else

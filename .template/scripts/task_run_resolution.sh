@@ -230,6 +230,8 @@ build_task_run_pairs() {
     trap 'stop_discovery_xtrace' RETURN
   fi
 
+  clear_resolve_run_var_cache
+
   TASK_RUN_PAIRS=()
   TASK_RUN_PAIR_OVERRIDES=()
   TASK_RUN_PAIR_OCC_KEYS=()
@@ -379,6 +381,9 @@ build_task_run_pairs() {
       read -ra truns <<< "${task_runs[$t]:-}"
       [[ ${#truns[@]} -gt $max_runs ]] && max_runs=${#truns[@]}
     done
+    # Reduce once per spec so cache keys match the pair-assignment loop below.
+    local resolve_ov_tsv
+    resolve_ov_tsv=$(reduce_override_to_final_per_key "$effective_ov_tsv")
     local run_idx
     for ((run_idx=0; run_idx < max_runs; run_idx++)); do
       for t in "${tasks_ordered[@]}"; do
@@ -386,14 +391,18 @@ build_task_run_pairs() {
         read -ra truns <<< "${task_runs[$t]:-}"
         if [[ $run_idx -lt ${#truns[@]} ]]; then
           local run_name="${truns[$run_idx]}"
+          ENV_OVERRIDES=()
+          [[ -n "$resolve_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$resolve_ov_tsv"
+          # One bash -c for DISABLED + WM + NAME (+isset); later lookups hit the cache.
           if [[ "$INCLUDE_DISABLED" != true ]]; then
-            ENV_OVERRIDES=()
-            [[ -n "$effective_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$effective_ov_tsv"
+            resolve_run_vars "$t" "$run_name" RUN_DISABLED RUN_WORKLOAD_MANAGER RUN_WORKLOAD_NAME
             local run_disabled
-            run_disabled=$(resolve_run_var "$t" "$run_name" "RUN_DISABLED" | tr '[:upper:]' '[:lower:]')
+            run_disabled=$(printf '%s' "${RESOLVED_RUN_VARS[RUN_DISABLED]-}" | tr '[:upper:]' '[:lower:]')
             case "$run_disabled" in
               true|1|yes) continue ;;
             esac
+          else
+            resolve_run_vars "$t" "$run_name" RUN_WORKLOAD_MANAGER RUN_WORKLOAD_NAME
           fi
           pairs_with_override+=("$t	$run_name	$effective_ov_tsv")
         fi
@@ -432,22 +441,21 @@ build_task_run_pairs() {
     TASK_RUN_PAIR_OVERRIDES+=("$pair_ov_tsv")
     TASK_RUN_PAIR_OCC_KEYS+=("$occ_key")
 
-    # Resolve RUN_WORKLOAD_MANAGER and RUN_WORKLOAD_NAME per pair from run_meta (with this pair's overrides)
+    # Resolve RUN_WORKLOAD_MANAGER and RUN_WORKLOAD_NAME (cache hit after emit-loop batch)
     ENV_OVERRIDES=()
     [[ -n "$pair_ov_tsv" ]] && IFS=$'\t' read -ra ENV_OVERRIDES <<< "$pair_ov_tsv"
+    resolve_run_vars "$task_dir" "$run_name" RUN_WORKLOAD_MANAGER RUN_WORKLOAD_NAME
     local wm workload_name
-    wm=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_MANAGER")
+    wm="${RESOLVED_RUN_VARS[RUN_WORKLOAD_MANAGER]-}"
     [[ -z "$wm" ]] && wm="$TEMPLATE/workload_managers/direct.sh"
     if [[ "$wm" != /* ]]; then
       echo "Error: RUN_WORKLOAD_MANAGER must be an absolute path. Got: $wm" >&2
       exit 1
     fi
-    workload_name=$(resolve_run_var "$task_dir" "$run_name" "RUN_WORKLOAD_NAME")
+    workload_name="${RESOLVED_RUN_VARS[RUN_WORKLOAD_NAME]-}"
     # Default to run_tasks only when RUN_WORKLOAD_NAME is unset (neither in overrides nor run_meta.sh)
     if [[ -z "$workload_name" ]]; then
-      local is_set
-      is_set=$(resolve_run_var_isset "$task_dir" "$run_name" "RUN_WORKLOAD_NAME")
-      if [[ "$is_set" == "1" ]]; then
+      if [[ "${RESOLVED_RUN_VARS_ISSET[RUN_WORKLOAD_NAME]-0}" == "1" ]]; then
         workload_name=""   # explicitly set to empty
       else
         workload_name="run_tasks"
