@@ -142,10 +142,94 @@ reduce_override_to_final_per_key() {
   done
 }
 
+# FD used for BASH_XTRACEFD during --trace-discovery (avoid 0-2 and common redirects).
+DISCOVERY_XTRACE_FD=77
+
+# Start timestamped xtrace of discovery into TRACE_DISCOVERY_FILE (or a default under workload_logs/).
+start_discovery_xtrace() {
+  local file="${TRACE_DISCOVERY_FILE:-}"
+  if [[ -z "$file" ]]; then
+    mkdir -p "$RUN_TASKS_OUTPUT_ROOT"
+    file="$RUN_TASKS_OUTPUT_ROOT/discovery-xtrace.$$.log"
+    TRACE_DISCOVERY_FILE="$file"
+  else
+    local dir
+    dir="$(dirname -- "$file")"
+    [[ "$dir" == "." ]] || mkdir -p "$dir"
+  fi
+  eval "exec ${DISCOVERY_XTRACE_FD}>>\"\$file\""
+  export BASH_XTRACEFD=$DISCOVERY_XTRACE_FD
+  # GNU date %N; evaluated per traced line (not itself traced).
+  PS4='+ $(date +%s.%N) ${BASH_SOURCE[0]}:${LINENO}:${FUNCNAME[0]:-main}: '
+  {
+    echo "=== discovery xtrace begin $(date -Iseconds) pid=$$ ==="
+  } >&$DISCOVERY_XTRACE_FD
+  echo "Tracing discovery to $file" >&2
+  set -x
+}
+
+# Stop discovery xtrace, close the FD, and print a simple hotspot summary to stderr.
+stop_discovery_xtrace() {
+  set +x
+  trap - RETURN
+  unset BASH_XTRACEFD
+  if { true >&$DISCOVERY_XTRACE_FD; } 2>/dev/null; then
+    {
+      echo "=== discovery xtrace end $(date -Iseconds) ==="
+    } >&$DISCOVERY_XTRACE_FD
+    eval "exec ${DISCOVERY_XTRACE_FD}>&-"
+  fi
+  local file="${TRACE_DISCOVERY_FILE:-}"
+  [[ -n "$file" && -f "$file" ]] || return 0
+  echo "Discovery xtrace written to $file" >&2
+  echo "Top discovery hotspots (cumulative seconds, by source:line:func):" >&2
+  awk '
+    /^\++ [0-9]+\.[0-9]+ / {
+      ts = $2
+      loc = $3
+      sub(/:$/, "", loc)
+      if (prev_ts != "") {
+        dt = ts - prev_ts
+        if (dt < 0) dt = 0
+        sum[prev_loc] += dt
+        count[prev_loc]++
+      }
+      prev_ts = ts
+      prev_loc = loc
+      next
+    }
+    END {
+      n = 0
+      for (k in sum) {
+        n++
+        keys[n] = k
+        vals[n] = sum[k]
+      }
+      for (i = 1; i <= n; i++) {
+        for (j = i + 1; j <= n; j++) {
+          if (vals[j] > vals[i]) {
+            tmp = vals[i]; vals[i] = vals[j]; vals[j] = tmp
+            tmpk = keys[i]; keys[i] = keys[j]; keys[j] = tmpk
+          }
+        }
+      }
+      limit = (n < 25) ? n : 25
+      for (i = 1; i <= limit; i++) {
+        printf "  %8.3f s  (%5d hits)  %s\n", vals[i], count[keys[i]], keys[i]
+      }
+    }
+  ' "$file" >&2
+}
+
 # Build TASK_RUN_PAIRS, TASK_RUN_PAIR_OVERRIDES, TASK_RUN_PAIR_OCC_KEYS, TASK_OCC_KEYS, TASKS_UNIQUE from TASK_SPECS.
 # Overrides are per-spec (TASK_SPEC_OVERRIDES). Same (task_dir, run_name, override_snapshot) = same occurrence group (OCC:N).
 # Pairs are emitted in spec order; within each spec, run-first task-second order. Duplicate (task_dir, run_name) across specs allowed.
 build_task_run_pairs() {
+  if [[ "${TRACE_DISCOVERY:-false}" == true ]]; then
+    start_discovery_xtrace
+    trap 'stop_discovery_xtrace' RETURN
+  fi
+
   TASK_RUN_PAIRS=()
   TASK_RUN_PAIR_OVERRIDES=()
   TASK_RUN_PAIR_OCC_KEYS=()

@@ -30,6 +30,7 @@ Options:
   --direct                 Shortcut for RUN_WORKLOAD_MANAGER=\$TEMPLATE/workload_managers/direct.sh
   --status                 Show exit state (SUCCESS/FAILED/RUNNING/PENDING) for each task run from task specs
   --status-manifest=FILE   Show exit states for all task runs listed in FILE (manifest from a prior run)
+  --trace-discovery[=FILE] Timestamped xtrace of task discovery (build_task_run_pairs); writes FILE or a log under workload_logs/
   --version                Print version and exit
   -h, --help               Show this help
 
@@ -138,6 +139,15 @@ parse_args() {
         ;;
       --status-manifest=*)
         STATUS_MANIFEST="${1#--status-manifest=}"
+        shift
+        ;;
+      --trace-discovery)
+        TRACE_DISCOVERY=true
+        shift
+        ;;
+      --trace-discovery=*)
+        TRACE_DISCOVERY=true
+        TRACE_DISCOVERY_FILE="${1#--trace-discovery=}"
         shift
         ;;
       --version)
