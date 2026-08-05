@@ -1,0 +1,8 @@
+# Explicit empty TASK_RUNS means no runs (do not fall back to "assets")
+RUN_TASKS: --dry-run tasks/empty_runs
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+END_STDOUT

@@ -1,5 +1,5 @@
-# Default run name is "assets" when TASK_RUNS is unset and no suffix
-RUN_TASKS: --dry-run tasks/simple
+# Empty TASK_RUNS skips that task; unset TASK_RUNS still defaults to "assets"
+RUN_TASKS: --dry-run tasks/empty_runs tasks/simple
 EXIT: 0
 STDOUT:
 Discovering task runs...

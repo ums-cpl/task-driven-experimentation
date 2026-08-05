@@ -1,0 +1,8 @@
+# Empty TASK_RUNS= env override means no runs, even when task_meta sets runs
+RUN_TASKS: --dry-run TASK_RUNS= tasks/with_runs
+EXIT: 0
+STDOUT:
+Discovering task runs...
+SKIP_VERIFY_DEF=false
+---
+END_STDOUT

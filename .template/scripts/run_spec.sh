@@ -27,7 +27,9 @@ _split_run_specs() {
     elif [[ "$c" == "," ]] && [[ $depth -eq 0 ]]; then
       token="${token#"${token%%[![:space:]]*}"}"
       token="${token%"${token##*[![:space:]]}"}"
-      [[ -n "$token" ]] && _out+=("$token")
+      if [[ -n "$token" ]]; then
+        _out+=("$token")
+      fi
       token=""
     else
       token+="$c"
@@ -35,7 +37,9 @@ _split_run_specs() {
   done
   token="${token#"${token%%[![:space:]]*}"}"
   token="${token%"${token##*[![:space:]]}"}"
-  [[ -n "$token" ]] && _out+=("$token")
+  if [[ -n "$token" ]]; then
+    _out+=("$token")
+  fi
 }
 
 # Expand one RUN_SPEC (may contain patterns) and append run names to _out.

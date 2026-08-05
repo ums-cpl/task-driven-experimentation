@@ -11,7 +11,7 @@ Execute tasks. If no TASK is given, all tasks under tasks/ are run. TASK can be:
   - Wildcard: expands to matching dirs (e.g. tasks/.../*, tasks/**). Use !(pattern) to exclude (e.g. tasks/.../*/!(data))
 
   Optional suffix :TASK_RUNS sets run(s). Examples: :local, :run-{1:10}, :run* (clean only, wildcard).
-  Without suffix: default TASK_RUNS "assets" for execute; cleans all runs with --clean.
+  Without suffix: if TASK_RUNS is unset, default "assets" for execute; if TASK_RUNS is set but empty, no runs. Cleans all runs with --clean.
   Quote the task spec if TASK_RUNS contains * or ? (e.g. "tasks/task1:run*").
 
 Options:

@@ -346,9 +346,11 @@ build_task_run_pairs() {
           done < <(printf '%s\n' "${runs[@]}" | sort)
           runs=("${sorted[@]}")
         else
+          # Unset TASK_RUNS -> default "assets"; set-but-empty -> no runs.
           local resolved_run_spec
-          resolved_run_spec=$(resolve_task_var "$task_dir" "TASK_RUNS")
-          if [[ -z "$resolved_run_spec" ]]; then
+          if [[ "$(resolve_task_var_isset "$task_dir" "TASK_RUNS")" == "1" ]]; then
+            resolved_run_spec=$(resolve_task_var "$task_dir" "TASK_RUNS")
+          else
             resolved_run_spec="assets"
           fi
           expand_run_spec "$resolved_run_spec" runs

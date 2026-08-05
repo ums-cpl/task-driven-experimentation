@@ -85,9 +85,9 @@ A **task** is an abstract definition of work. A **task run** is a concrete insta
 
 | Variable     | Description                                                                                                                              |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `TASK_RUNS`  | Default runs to execute for this task (e.g. `assets`, `run-{1:10}`). Comma-separated list; each item may use `{a,b,c}` and `{start:end}`.  |
+| `TASK_RUNS`  | Default runs for this task (e.g. `assets`, `run-{1:10}`). Comma-separated; items may use `{a,b,c}` and `{start:end}`. Unset uses built-in default `assets`; explicitly empty means no runs. |
 
-**Priority** (highest to lowest): CLI override where applicable (e.g. `:TASK_RUNS` suffix) > `KEY=VALUE` env override on the command line > value from `task_meta.sh` chain (root-to-leaf) > built-in default (`assets`).
+**Priority** (highest to lowest): CLI override where applicable (e.g. `:TASK_RUNS` suffix) > `KEY=VALUE` env override on the command line > value from `task_meta.sh` chain (root-to-leaf) > built-in default (`assets`, only when `TASK_RUNS` is unset).
 
 
 ### Run: `run_meta.sh`
